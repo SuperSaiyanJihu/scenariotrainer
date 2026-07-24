@@ -5,6 +5,7 @@ import { requireAuth } from "@/lib/api-auth";
 import { isPracticeLabEnabled, isVoiceEnabled, practiceLabConfig } from "@/lib/practice-lab/config";
 import { createScenarioSnapshot } from "@/lib/practice-lab/scenario-utils";
 import { logPracticeEvent } from "@/lib/practice-lab/logger";
+import { checkRateLimit } from "@/lib/practice-lab/rate-limit";
 import type { Prisma } from "@/generated/prisma/client";
 
 const startSchema = z.object({
@@ -20,6 +21,14 @@ export async function POST(request: Request) {
 
   if (!isPracticeLabEnabled()) {
     return NextResponse.json({ error: "Practice Lab is not enabled" }, { status: 503 });
+  }
+
+  const rate = checkRateLimit(`start:${authResult.user.id}`, 10);
+  if (!rate.allowed) {
+    return NextResponse.json(
+      { error: "Too many practice starts. Please wait a moment." },
+      { status: 429 }
+    );
   }
 
   const body = await request.json();

@@ -271,6 +271,35 @@ export default function ScenarioBuilderPage({ params }: { params: Promise<{ id: 
         <Button onClick={() => handleSave(true)} disabled={saving} variant="default">
           Publish
         </Button>
+        {!isNew && scenarioId && (
+          <Button
+            type="button"
+            variant="outline"
+            disabled={saving}
+            onClick={async () => {
+              setSaving(true);
+              setError("");
+              const res = await fetch("/api/practice-lab/attempts/start", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  scenarioId,
+                  mode: "TEXT",
+                  isPreview: true,
+                }),
+              });
+              const data = await res.json();
+              setSaving(false);
+              if (!res.ok) {
+                setError(data.error ?? "Failed to start preview");
+                return;
+              }
+              router.push(`/practice-lab/attempts/${data.attemptId}`);
+            }}
+          >
+            Test Scenario
+          </Button>
+        )}
       </div>
     </div>
   );

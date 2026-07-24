@@ -2,6 +2,7 @@ import type { UserRole } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 
 export { deduplicateVoiceTranscriptEvents, getNextSequence } from "@/lib/practice-lab/transcript";
+export { canManageScenarios, canAssignScenarios } from "@/lib/practice-lab/roles";
 
 export interface AuthUser {
   id: string;
@@ -38,14 +39,6 @@ export async function canViewTranscript(user: AuthUser, attemptUserId: string): 
   }
 
   return false;
-}
-
-export function canManageScenarios(role: UserRole): boolean {
-  return role === "ADMINISTRATOR";
-}
-
-export function canAssignScenarios(role: UserRole): boolean {
-  return role === "ADMINISTRATOR" || role === "SUPERVISOR";
 }
 
 export async function getSupervisedUserIds(supervisorId: string): Promise<string[]> {

@@ -6,6 +6,7 @@ import { practiceLabConfig } from "@/lib/practice-lab/config";
 import { generateCharacterResponse } from "@/lib/practice-lab/roleplay";
 import { canAccessAttempt, getNextSequence } from "@/lib/practice-lab/authorization";
 import { parseScenarioSnapshot } from "@/lib/practice-lab/scenario-utils";
+import { checkRateLimit } from "@/lib/practice-lab/rate-limit";
 
 const messageSchema = z.object({
   content: z.string().min(1).max(practiceLabConfig.maxInputLength),
@@ -19,6 +20,15 @@ export async function POST(
   if ("error" in authResult) return authResult.error;
 
   const { id } = await params;
+
+  const rate = checkRateLimit(`message:${authResult.user.id}:${id}`, practiceLabConfig.rateLimitPerMinute);
+  if (!rate.allowed) {
+    return NextResponse.json(
+      { error: "You're sending messages too quickly. Please wait a moment." },
+      { status: 429 }
+    );
+  }
+
   const body = await request.json();
   const parsed = messageSchema.safeParse(body);
   if (!parsed.success) {

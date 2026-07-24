@@ -6,6 +6,7 @@ import { isVoiceEnabled, practiceLabConfig } from "@/lib/practice-lab/config";
 import { buildRealtimeInstructions } from "@/lib/practice-lab/prompts";
 import { logPracticeEvent } from "@/lib/practice-lab/logger";
 import { parseScenarioSnapshot } from "@/lib/practice-lab/scenario-utils";
+import { checkRateLimit } from "@/lib/practice-lab/rate-limit";
 
 const transcriptSchema = z.object({
   messages: z.array(
@@ -95,6 +96,14 @@ export async function GET(
   }
 
   const { id } = await params;
+
+  const rate = checkRateLimit(`voice-session:${authResult.user.id}`, 5);
+  if (!rate.allowed) {
+    return NextResponse.json(
+      { error: "Too many voice session requests. Please wait a moment." },
+      { status: 429 }
+    );
+  }
 
   const attempt = await prisma.practiceAttempt.findUnique({ where: { id } });
 

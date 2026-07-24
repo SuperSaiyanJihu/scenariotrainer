@@ -39,14 +39,19 @@ export default function AdminPracticeLabPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Manage Scenarios</h1>
           <p className="text-slate-600">Create, edit, and publish Practice Lab scenarios</p>
         </div>
-        <Button asChild>
-          <Link href="/admin/practice-lab/new">Create Scenario</Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button asChild>
+            <Link href="/admin/practice-lab/new">Create Scenario</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/admin/practice-lab/settings">Settings</Link>
+          </Button>
+        </div>
       </div>
 
       {loading ? (

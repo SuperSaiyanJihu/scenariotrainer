@@ -97,6 +97,15 @@ Administrators add criteria via the scenario builder. Weights must total 100%. E
 - Name, description, weight
 - Scoring guidance, positive/negative indicators
 
+## Assigning Scenarios
+
+Supervisors and administrators can assign published scenarios from **Team Results**:
+1. Choose a scenario and team member
+2. Optionally set a due date and whether the assignment is required
+3. Employees see assigned scenarios in Practice Lab
+
+Administrators can also configure feature flags and transcript privacy under **Settings**.
+
 ## Changing Models Safely
 
 Update environment variables:

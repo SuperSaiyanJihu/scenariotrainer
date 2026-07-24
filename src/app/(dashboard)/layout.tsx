@@ -10,6 +10,7 @@ const navItems = [
   { href: "/practice-lab", label: "Practice Lab" },
   { href: "/supervisor/practice-lab", label: "Team Results", roles: ["SUPERVISOR", "ADMINISTRATOR"] },
   { href: "/admin/practice-lab", label: "Manage Scenarios", roles: ["ADMINISTRATOR"] },
+  { href: "/admin/practice-lab/settings", label: "Settings", roles: ["ADMINISTRATOR"] },
 ];
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
