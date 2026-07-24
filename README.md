@@ -41,6 +41,8 @@ npm run dev
 
 Open http://localhost:3000
 
+Install as an app from Chrome: use the **Install App** prompt, or browser menu → Install / Add to Home Screen.
+
 ### Demo Accounts
 
 | Role | Email | Password |

@@ -69,6 +69,16 @@ Administrators can open **Settings** to:
 - Administrators can see all attempt data
 - Transcript access for supervisors is controlled in app settings
 
+## Install as an App
+
+You can install Performance Pulse on a phone, tablet, or Chromebook:
+
+1. Open Performance Pulse in Chrome
+2. Choose **Install App** when prompted, or use the browser menu → **Install Performance Pulse** / **Add to Home screen**
+3. Open it from your home screen like any other app
+
+On iPhone/iPad, use Safari → Share → **Add to Home Screen**.
+
 ## Tips for Good Scenarios
 
 - Write realistic opening messages

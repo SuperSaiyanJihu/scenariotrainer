@@ -2,14 +2,15 @@ import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 
 export const dynamic = "force-dynamic";
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/practice-lab", label: "Practice Lab" },
-  { href: "/supervisor/practice-lab", label: "Team Results", roles: ["SUPERVISOR", "ADMINISTRATOR"] },
-  { href: "/admin/practice-lab", label: "Manage Scenarios", roles: ["ADMINISTRATOR"] },
+  { href: "/dashboard", label: "Home" },
+  { href: "/practice-lab", label: "Practice" },
+  { href: "/supervisor/practice-lab", label: "Team", roles: ["SUPERVISOR", "ADMINISTRATOR"] },
+  { href: "/admin/practice-lab", label: "Manage", roles: ["ADMINISTRATOR"] },
   { href: "/admin/practice-lab/settings", label: "Settings", roles: ["ADMINISTRATOR"] },
 ];
 
@@ -21,8 +22,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const visibleItems = navItems.filter((item) => !item.roles || item.roles.includes(user.role));
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-white">
+    <div className="min-h-screen bg-slate-50 pb-20 sm:pb-0">
+      <header
+        className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur"
+        style={{ paddingTop: "env(safe-area-inset-top)" }}
+      >
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-8">
             <Link href="/dashboard" className="text-lg font-bold text-sky-700">
@@ -56,6 +60,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </div>
       </header>
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">{children}</main>
+      <MobileBottomNav items={navItems} role={user.role} />
     </div>
   );
 }

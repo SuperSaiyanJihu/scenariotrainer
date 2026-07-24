@@ -7,7 +7,21 @@
   --foreground: #0f172a;
 }
 
+html,
+body {
+  min-height: 100%;
+}
+
 body {
   color: var(--foreground);
   background: var(--background);
+  overscroll-behavior-y: none;
+}
+
+/* App-like safe areas for installed PWA / mobile browsers */
+@supports (padding: max(0px)) {
+  body {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
 }

@@ -117,9 +117,14 @@ OPENAI_REALTIME_MODEL=gpt-4o-realtime-preview
 
 Test with admin preview before deploying to production.
 
-## Known Limitations
+## Mobile / Installable App
 
-- Voice requires browser WebRTC and microphone support
-- Realtime API transcript events depend on OpenAI event format
-- Evaluation requires OpenAI API key (no offline mode)
-- Supervisor transcript access controlled by `supervisorCanViewTranscripts` setting
+Performance Pulse is a Progressive Web App (PWA):
+
+- Install from Chrome/Edge on desktop, Android, or Chromebook
+- On iOS Safari: Share → Add to Home Screen
+- Runs in standalone display mode with home-screen icon
+- Service worker caches shell assets; API/auth responses are never cached
+- Practice Lab works in the installed app with text and voice modes
+
+This keeps one codebase for web and installable app experiences.
