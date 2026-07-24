@@ -43,6 +43,25 @@ Practice Lab helps your team rehearse difficult workplace conversations with AI 
 2. Click **Publish** when ready for employees
 3. Use **Duplicate** to create variations of existing scenarios
 4. **Archive** scenarios that are no longer needed
+5. Use **Test Scenario** to preview a conversation without creating an employee training record
+
+## Assigning Scenarios
+
+Supervisors and administrators can assign scenarios from **Team Results**:
+
+1. Choose a published scenario
+2. Choose a team member
+3. Optionally set a due date and mark it required
+4. Employees will see the assignment in Practice Lab
+
+## Settings
+
+Administrators can open **Settings** to:
+
+- Enable or disable Practice Lab
+- Enable or disable voice mode
+- Allow or block supervisor transcript access
+- Configure transcript retention days
 
 ## Reviewing Results
 
