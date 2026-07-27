@@ -12,6 +12,7 @@ import {
   UploadCloud,
   PlayCircle,
   Loader2,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,7 +63,7 @@ export default function ScenarioBuilderPage({ params }: { params: Promise<{ id: 
     description: "",
     category: "PARENT_CONVERSATIONS",
     difficulty: "INTERMEDIATE",
-    estimatedMinutes: 10,
+    estimatedMinutes: 3,
     employeeRole: "",
     aiCharacterName: "",
     aiCharacterRole: "",
@@ -79,9 +80,43 @@ export default function ScenarioBuilderPage({ params }: { params: Promise<{ id: 
     prohibitedAssistantBehaviors: "",
     policyContext: "",
     modeAvailability: "TEXT_AND_VOICE",
-    maximumDurationMinutes: 15,
+    maximumDurationMinutes: 3,
     status: "DRAFT",
   });
+  const [brief, setBrief] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState("");
+  const [generated, setGenerated] = useState(false);
+
+  async function generateDraft() {
+    setGenerating(true);
+    setGenerateError("");
+
+    try {
+      const res = await fetch("/api/admin/practice-lab/scenarios/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ brief }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setGenerateError(data.error ?? "Generation failed. Try again.");
+        return;
+      }
+
+      setForm((prev) => ({
+        ...prev,
+        ...data.scenario,
+        slug: slugTouched ? prev.slug : slugify(data.scenario.title ?? ""),
+      }));
+      setGenerated(true);
+      setError("");
+    } catch {
+      setGenerateError("Generation failed. Check your connection and try again.");
+    } finally {
+      setGenerating(false);
+    }
+  }
 
   useEffect(() => {
     params.then(({ id }) => {
@@ -212,6 +247,59 @@ export default function ScenarioBuilderPage({ params }: { params: Promise<{ id: 
         <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700" role="alert">
           {error}
         </p>
+      )}
+
+      {isNew && (
+        <Card className="border-brand-100 bg-gradient-to-br from-brand-50 to-white">
+          <CardHeader>
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-white">
+                <Sparkles className="h-4 w-4" />
+              </span>
+              <CardTitle>Draft with AI</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="space-y-2">
+              <Label htmlFor="field-brief">Describe the scenario you want</Label>
+              <Textarea
+                id="field-brief"
+                rows={3}
+                placeholder='e.g. "A parent is upset that their child was moved down a level without warning. The instructor needs to explain the decision without sounding defensive."'
+                value={brief}
+                onChange={(e) => setBrief(e.target.value)}
+                disabled={generating}
+                maxLength={2000}
+                aria-describedby="field-brief-hint"
+              />
+              <p id="field-brief-hint" className="text-xs text-zinc-500">
+                The AI fills in every field below — character, hidden information, escalation triggers, and
+                policies — sized for a ~3 minute practice. Review and tweak anything before saving.
+              </p>
+            </div>
+            {generateError && (
+              <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700" role="alert">
+                {generateError}
+              </p>
+            )}
+            {generated && !generateError && (
+              <p className="text-sm text-emerald-700" role="status">
+                Draft generated — review the fields below, adjust anything, then save or publish.
+              </p>
+            )}
+            <Button onClick={generateDraft} disabled={generating || brief.trim().length < 10}>
+              {generating ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" /> {generated ? "Regenerate" : "Generate Scenario"}
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
       <Card>

@@ -8,7 +8,11 @@ type LogEvent =
   | "roleplay_failed"
   | "voice_session_started"
   | "voice_session_ended"
-  | "voice_connection_failed";
+  | "voice_connection_failed"
+  | "scenario_generation_started"
+  | "scenario_generation_completed"
+  | "scenario_generation_invalid"
+  | "scenario_generation_failed";
 
 export function logPracticeEvent(
   event: LogEvent,
