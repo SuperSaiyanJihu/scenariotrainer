@@ -1,0 +1,33 @@
+import { z } from "zod";
+
+export const scenarioInputSchema = z.object({
+  title: z.string().trim().min(1),
+  slug: z.string().trim().min(1).regex(/^[a-z0-9-]+$/),
+  description: z.string(),
+  category: z.enum([
+    "PARENT_CONVERSATIONS",
+    "INSTRUCTOR_COACHING",
+    "SUPERVISOR_FEEDBACK",
+    "COWORKER_COMMUNICATION",
+  ]),
+  difficulty: z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"]),
+  estimatedMinutes: z.number().int().min(1),
+  employeeRole: z.string().trim().min(1),
+  aiCharacterName: z.string().trim().min(1),
+  aiCharacterRole: z.string().trim().min(1),
+  aiCharacterDescription: z.string(),
+  startingEmotionalState: z.string().default(""),
+  conversationStyle: z.string().default(""),
+  situationBackground: z.string(),
+  openingMessage: z.string().trim().min(1),
+  roleplayInstructions: z.string().default(""),
+  hiddenCharacterInformation: z.string().default(""),
+  escalationInstructions: z.string().default(""),
+  deescalationConditions: z.string().default(""),
+  successConditions: z.string().default(""),
+  prohibitedAssistantBehaviors: z.string().default(""),
+  policyContext: z.string().default(""),
+  modeAvailability: z.enum(["TEXT_ONLY", "VOICE_ONLY", "TEXT_AND_VOICE"]),
+  maximumDurationMinutes: z.number().int().min(1).default(15),
+  status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).default("DRAFT"),
+});

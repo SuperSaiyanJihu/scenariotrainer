@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #eef2ff;
+  --foreground: #0f172a;
+  --panel: #ffffff;
+  --panel-muted: #f8fafc;
+  --muted-text: #334155;
+  --border: #cbd5e1;
+  --focus-ring: #0ea5e9;
+  --success-bg: #ecfeff;
+  --success-border: #06b6d4;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  color: var(--foreground);
+  background:
+    radial-gradient(circle at 0% 0%, #dbeafe 0%, transparent 50%),
+    radial-gradient(circle at 100% 0%, #e0e7ff 0%, transparent 45%),
+    radial-gradient(circle at 100% 100%, #ccfbf1 0%, transparent 45%),
+    var(--background);
+  overscroll-behavior-y: none;
+  font-family: var(--font-inter), "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  letter-spacing: 0.005em;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* App-like safe areas for installed PWA / mobile browsers */
+@supports (padding: max(0px)) {
+  body {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
