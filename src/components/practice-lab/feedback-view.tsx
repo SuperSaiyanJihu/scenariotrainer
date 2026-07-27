@@ -98,7 +98,7 @@ export function FeedbackView(props: FeedbackViewProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Let's reflect first</CardTitle>
+          <CardTitle>Let&apos;s reflect first</CardTitle>
           <CardDescription>
             There are no grades or scores. Think through the conversation in your own
             words, then your AI coach will offer three practical suggestions.
@@ -141,7 +141,7 @@ export function FeedbackView(props: FeedbackViewProps) {
         <>
           <Card>
             <CardHeader>
-              <CardTitle>Your coach's response</CardTitle>
+              <CardTitle>Your coach&apos;s response</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="whitespace-pre-wrap text-slate-700">{props.coachResponse}</p>
