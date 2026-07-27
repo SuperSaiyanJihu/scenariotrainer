@@ -18,8 +18,12 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run dev",
+    // CI builds before running e2e, so serve the production build there: it
+    // avoids dev-mode on-demand route compilation, which made the sign-in
+    // redirect race its assertion timeout.
+    command: process.env.CI ? "pnpm start" : "pnpm dev",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
+    timeout: 120_000,
   },
 });
