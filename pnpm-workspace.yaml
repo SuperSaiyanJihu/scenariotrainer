@@ -1,6 +1,10 @@
 packages:
   - "."
 
+# Read by pnpm 10+ (CI's pnpm 11 and Railway's Railpack builder both qualify).
+# Deliberately not in package.json's "pnpm" field: pnpm 11 ignores that field
+# entirely, which leaves the lockfile's recorded overrides unmatched and fails
+# any frozen install with ERR_PNPM_LOCKFILE_CONFIG_MISMATCH.
 overrides:
   baseline-browser-mapping: 2.11.4
 
