@@ -63,7 +63,7 @@ export default function LoginPage() {
           </ul>
         </div>
 
-        <p className="relative text-xs text-white/40">Performance Pulse · Excel Aquatics</p>
+        <p className="relative text-xs text-white/40">Excel Aquatics</p>
       </div>
 
       <div className="flex flex-1 items-center justify-center px-4 py-16 sm:px-8">

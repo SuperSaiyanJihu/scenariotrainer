@@ -1,4 +1,4 @@
-# Performance Pulse — Practice Lab
+# ScenarioTrainer — Practice Lab
 
 Excel Aquatics employee training platform for realistic, AI-powered conversation practice.
 
