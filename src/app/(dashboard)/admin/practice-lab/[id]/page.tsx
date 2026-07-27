@@ -19,14 +19,43 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+
+const REQUIRED_FIELDS: [string, string][] = [
+  ["title", "Title"],
+  ["slug", "Slug"],
+  ["employeeRole", "Employee Role"],
+  ["aiCharacterName", "Character Name"],
+  ["aiCharacterRole", "Character Role"],
+  ["openingMessage", "Opening Message"],
+];
+
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function RequiredMark() {
+  return (
+    <span className="text-rose-500" aria-hidden="true">
+      {" "}
+      *
+    </span>
+  );
+}
 
 export default function ScenarioBuilderPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const [scenarioId, setScenarioId] = useState<string | null>(null);
   const [isNew, setIsNew] = useState(false);
+  const [slugTouched, setSlugTouched] = useState(false);
   const [saving, setSaving] = useState(false);
   const [previewing, setPreviewing] = useState(false);
   const [error, setError] = useState("");
+  const [confirmPublish, setConfirmPublish] = useState(false);
   const [form, setForm] = useState({
     title: "",
     slug: "",
@@ -61,6 +90,7 @@ export default function ScenarioBuilderPage({ params }: { params: Promise<{ id: 
         return;
       }
       setScenarioId(id);
+      setSlugTouched(true);
       fetch(`/api/admin/practice-lab/scenarios/${id}`)
         .then((r) => r.json())
         .then((data) => {
@@ -73,7 +103,21 @@ export default function ScenarioBuilderPage({ params }: { params: Promise<{ id: 
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
-  async function handleSave(publish = false) {
+  function updateTitle(value: string) {
+    setForm((prev) => ({
+      ...prev,
+      title: value,
+      slug: isNew && !slugTouched ? slugify(value) : prev.slug,
+    }));
+  }
+
+  function findMissingFields(): string[] {
+    return REQUIRED_FIELDS.filter(([field]) => !String(form[field as keyof typeof form] ?? "").trim()).map(
+      ([, label]) => label
+    );
+  }
+
+  async function persist(publish: boolean) {
     setSaving(true);
     setError("");
 
@@ -94,7 +138,7 @@ export default function ScenarioBuilderPage({ params }: { params: Promise<{ id: 
     setSaving(false);
 
     if (!res.ok) {
-      setError(data.error ?? "Failed to save");
+      setError(data.error ?? "Failed to save. Double-check the fields above and try again.");
       return;
     }
 
@@ -103,6 +147,25 @@ export default function ScenarioBuilderPage({ params }: { params: Promise<{ id: 
     } else {
       router.refresh();
     }
+  }
+
+  function handleSaveDraft() {
+    const missing = findMissingFields();
+    if (missing.length > 0) {
+      setError(`Fill in required fields before saving: ${missing.join(", ")}.`);
+      return;
+    }
+    persist(false);
+  }
+
+  function handlePublishClick() {
+    const missing = findMissingFields();
+    if (missing.length > 0) {
+      setError(`Fill in required fields before publishing: ${missing.join(", ")}.`);
+      return;
+    }
+    setError("");
+    setConfirmPublish(true);
   }
 
   async function handlePreview() {
@@ -139,6 +202,10 @@ export default function ScenarioBuilderPage({ params }: { params: Promise<{ id: 
         <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight text-zinc-900">
           {isNew ? "Create Scenario" : "Edit Scenario"}
         </h1>
+        <p className="mt-1 text-sm text-zinc-500">
+          Fields marked <span className="text-rose-500">*</span> are required. Scenarios stay in Draft and
+          are invisible to employees until you publish.
+        </p>
       </div>
 
       {error && (
@@ -158,28 +225,55 @@ export default function ScenarioBuilderPage({ params }: { params: Promise<{ id: 
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2 sm:col-span-2">
-            <Label>Title</Label>
-            <Input value={form.title} onChange={(e) => updateField("title", e.target.value)} />
+            <Label htmlFor="field-title">
+              Title
+              <RequiredMark />
+            </Label>
+            <Input
+              id="field-title"
+              required
+              value={form.title}
+              onChange={(e) => updateTitle(e.target.value)}
+            />
           </div>
           <div className="space-y-2">
-            <Label>Slug</Label>
-            <Input value={form.slug} onChange={(e) => updateField("slug", e.target.value)} />
+            <Label htmlFor="field-slug">
+              Slug
+              <RequiredMark />
+            </Label>
+            <Input
+              id="field-slug"
+              required
+              value={form.slug}
+              onChange={(e) => {
+                setSlugTouched(true);
+                updateField("slug", e.target.value);
+              }}
+              aria-describedby="field-slug-hint"
+            />
+            <p id="field-slug-hint" className="text-xs text-zinc-400">
+              Lowercase letters, numbers, and dashes only. Used in the practice URL.
+            </p>
           </div>
           <div className="space-y-2">
-            <Label>Status</Label>
-            <Select value={form.status} onChange={(e) => updateField("status", e.target.value)}>
+            <Label htmlFor="field-status">Status</Label>
+            <Select id="field-status" value={form.status} onChange={(e) => updateField("status", e.target.value)}>
               <option value="DRAFT">Draft</option>
               <option value="PUBLISHED">Published</option>
               <option value="ARCHIVED">Archived</option>
             </Select>
           </div>
           <div className="space-y-2 sm:col-span-2">
-            <Label>Description</Label>
-            <Textarea value={form.description} onChange={(e) => updateField("description", e.target.value)} />
+            <Label htmlFor="field-description">Description</Label>
+            <Textarea
+              id="field-description"
+              value={form.description}
+              onChange={(e) => updateField("description", e.target.value)}
+            />
           </div>
           <div className="space-y-2">
-            <Label>Category</Label>
-            <Select value={form.category} onChange={(e) => updateField("category", e.target.value)}>
+            <Label htmlFor="field-category">Category</Label>
+            <Select id="field-category" value={form.category} onChange={(e) => updateField("category", e.target.value)}>
               <option value="PARENT_CONVERSATIONS">Parent Conversations</option>
               <option value="INSTRUCTOR_COACHING">Instructor Coaching</option>
               <option value="SUPERVISOR_FEEDBACK">Supervisor Feedback</option>
@@ -187,32 +281,48 @@ export default function ScenarioBuilderPage({ params }: { params: Promise<{ id: 
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Difficulty</Label>
-            <Select value={form.difficulty} onChange={(e) => updateField("difficulty", e.target.value)}>
+            <Label htmlFor="field-difficulty">Difficulty</Label>
+            <Select
+              id="field-difficulty"
+              value={form.difficulty}
+              onChange={(e) => updateField("difficulty", e.target.value)}
+            >
               <option value="BEGINNER">Beginner</option>
               <option value="INTERMEDIATE">Intermediate</option>
               <option value="ADVANCED">Advanced</option>
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Estimated Minutes</Label>
+            <Label htmlFor="field-estimated">Estimated Minutes</Label>
             <Input
+              id="field-estimated"
               type="number"
+              min={1}
               value={form.estimatedMinutes}
-              onChange={(e) => updateField("estimatedMinutes", parseInt(e.target.value))}
+              onChange={(e) => updateField("estimatedMinutes", parseInt(e.target.value) || 1)}
             />
           </div>
           <div className="space-y-2">
-            <Label>Maximum Minutes</Label>
+            <Label htmlFor="field-max-minutes">Maximum Minutes</Label>
             <Input
+              id="field-max-minutes"
               type="number"
+              min={1}
               value={form.maximumDurationMinutes}
-              onChange={(e) => updateField("maximumDurationMinutes", parseInt(e.target.value))}
+              onChange={(e) => updateField("maximumDurationMinutes", parseInt(e.target.value) || 1)}
             />
           </div>
           <div className="space-y-2 sm:col-span-2">
-            <Label>Employee Role</Label>
-            <Input value={form.employeeRole} onChange={(e) => updateField("employeeRole", e.target.value)} />
+            <Label htmlFor="field-employee-role">
+              Employee Role
+              <RequiredMark />
+            </Label>
+            <Input
+              id="field-employee-role"
+              required
+              value={form.employeeRole}
+              onChange={(e) => updateField("employeeRole", e.target.value)}
+            />
           </div>
         </CardContent>
       </Card>
@@ -228,23 +338,48 @@ export default function ScenarioBuilderPage({ params }: { params: Promise<{ id: 
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label>Character Name</Label>
-            <Input value={form.aiCharacterName} onChange={(e) => updateField("aiCharacterName", e.target.value)} />
+            <Label htmlFor="field-character-name">
+              Character Name
+              <RequiredMark />
+            </Label>
+            <Input
+              id="field-character-name"
+              required
+              value={form.aiCharacterName}
+              onChange={(e) => updateField("aiCharacterName", e.target.value)}
+            />
           </div>
           <div className="space-y-2">
-            <Label>Character Role</Label>
-            <Input value={form.aiCharacterRole} onChange={(e) => updateField("aiCharacterRole", e.target.value)} />
+            <Label htmlFor="field-character-role">
+              Character Role
+              <RequiredMark />
+            </Label>
+            <Input
+              id="field-character-role"
+              required
+              value={form.aiCharacterRole}
+              onChange={(e) => updateField("aiCharacterRole", e.target.value)}
+            />
           </div>
           <div className="space-y-2 sm:col-span-2">
-            <Label>Character Description</Label>
+            <Label htmlFor="field-character-description">Character Description</Label>
             <Textarea
+              id="field-character-description"
               value={form.aiCharacterDescription}
               onChange={(e) => updateField("aiCharacterDescription", e.target.value)}
             />
           </div>
           <div className="space-y-2 sm:col-span-2">
-            <Label>Opening Message</Label>
-            <Textarea value={form.openingMessage} onChange={(e) => updateField("openingMessage", e.target.value)} />
+            <Label htmlFor="field-opening-message">
+              Opening Message
+              <RequiredMark />
+            </Label>
+            <Textarea
+              id="field-opening-message"
+              required
+              value={form.openingMessage}
+              onChange={(e) => updateField("openingMessage", e.target.value)}
+            />
           </div>
         </CardContent>
       </Card>
@@ -269,8 +404,9 @@ export default function ScenarioBuilderPage({ params }: { params: Promise<{ id: 
             ["policyContext", "Policy Context"],
           ].map(([field, label]) => (
             <div key={field} className="space-y-2">
-              <Label>{label}</Label>
+              <Label htmlFor={`field-${field}`}>{label}</Label>
               <Textarea
+                id={`field-${field}`}
                 value={String(form[field as keyof typeof form] ?? "")}
                 onChange={(e) => updateField(field, e.target.value)}
               />
@@ -280,12 +416,12 @@ export default function ScenarioBuilderPage({ params }: { params: Promise<{ id: 
       </Card>
 
       <div className="flex flex-wrap gap-3">
-        <Button onClick={() => handleSave(true)} disabled={saving}>
-          <UploadCloud className="h-4 w-4" /> Publish
-        </Button>
-        <Button onClick={() => handleSave(false)} disabled={saving} variant="outline">
+        <Button onClick={handleSaveDraft} disabled={saving}>
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           Save Draft
+        </Button>
+        <Button onClick={handlePublishClick} disabled={saving} variant="outline">
+          <UploadCloud className="h-4 w-4" /> Publish
         </Button>
         {!isNew && scenarioId && (
           <Button type="button" variant="ghost" disabled={previewing} onClick={handlePreview}>
@@ -294,6 +430,19 @@ export default function ScenarioBuilderPage({ params }: { params: Promise<{ id: 
           </Button>
         )}
       </div>
+
+      <ConfirmDialog
+        open={confirmPublish}
+        onOpenChange={setConfirmPublish}
+        title={form.status === "PUBLISHED" ? "Update the published scenario?" : "Publish this scenario?"}
+        description="Publishing makes this scenario immediately visible and startable for every employee it's assigned to (or all employees, if optional). Make sure the character, opening message, and logic above are ready."
+        confirmLabel={form.status === "PUBLISHED" ? "Update" : "Publish"}
+        confirmVariant="default"
+        onConfirm={async () => {
+          await persist(true);
+          setConfirmPublish(false);
+        }}
+      />
     </div>
   );
 }

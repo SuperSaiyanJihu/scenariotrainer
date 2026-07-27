@@ -11,7 +11,7 @@ import {
   Mic,
   UserPlus,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -183,6 +183,7 @@ export default function SupervisorPracticeLabPage() {
               <Input
                 id="dueDate"
                 type="date"
+                min={new Date().toISOString().split("T")[0]}
                 value={form.dueDate}
                 onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
               />
@@ -226,13 +227,13 @@ export default function SupervisorPracticeLabPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-2">
-            {assignments.map((a) => (
-              <Card key={a.id}>
-                <CardContent className="flex items-center justify-between gap-3 py-4">
-                  <div>
-                    <p className="font-medium text-zinc-900">{a.scenario.title}</p>
-                    <p className="mt-0.5 flex items-center gap-1.5 text-sm text-zinc-500">
+          <Card>
+            <CardContent className="divide-y divide-zinc-100 p-0">
+              {assignments.map((a) => (
+                <div key={a.id} className="flex items-center justify-between gap-3 p-4">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-zinc-900">{a.scenario.title}</p>
+                    <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-zinc-500">
                       {a.assignedTo?.name ?? "Team"}
                       {a.dueDate && (
                         <span className="inline-flex items-center gap-1">
@@ -241,13 +242,13 @@ export default function SupervisorPracticeLabPage() {
                       )}
                     </p>
                   </div>
-                  <Badge variant={a.required ? "warning" : "secondary"}>
+                  <Badge variant={a.required ? "warning" : "secondary"} className="shrink-0">
                     {a.required ? "Required" : "Optional"}
                   </Badge>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
         )}
       </section>
 
@@ -267,34 +268,32 @@ export default function SupervisorPracticeLabPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-2">
-            {attempts.map((a) => {
-              const ModeIcon = a.mode === "VOICE" ? Mic : MessageSquareText;
-              return (
-                <Card key={a.id}>
-                  <CardHeader className="py-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-xs font-semibold text-white">
-                          {getInitials(a.user.name)}
-                        </span>
-                        <div>
-                          <CardTitle className="text-base">{a.user.name}</CardTitle>
-                          <CardDescription className="flex items-center gap-1.5">
-                            {a.scenario.title}
-                            <ModeIcon className="h-3.5 w-3.5" />
-                          </CardDescription>
-                        </div>
+          <Card>
+            <CardContent className="divide-y divide-zinc-100 p-0">
+              {attempts.map((a) => {
+                const ModeIcon = a.mode === "VOICE" ? Mic : MessageSquareText;
+                return (
+                  <div key={a.id} className="flex items-center justify-between gap-3 p-4">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-xs font-semibold text-white">
+                        {getInitials(a.user.name)}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate font-medium text-zinc-900">{a.user.name}</p>
+                        <p className="flex items-center gap-1.5 truncate text-sm text-zinc-500">
+                          {a.scenario.title}
+                          <ModeIcon className="h-3.5 w-3.5 shrink-0" />
+                        </p>
                       </div>
-                      <Badge variant="success">
-                        <CheckCircle2 className="h-3 w-3" /> Completed
-                      </Badge>
                     </div>
-                  </CardHeader>
-                </Card>
-              );
-            })}
-          </div>
+                    <Badge variant="success" className="shrink-0">
+                      <CheckCircle2 className="h-3 w-3" /> Completed
+                    </Badge>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
         )}
       </section>
     </div>

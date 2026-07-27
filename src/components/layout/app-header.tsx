@@ -47,7 +47,7 @@ export function AppHeader({
               ScenarioTrainer
             </span>
           </Link>
-          <nav className="hidden items-center gap-1 sm:flex">
+          <nav aria-label="Primary" className="hidden items-center gap-1 sm:flex">
             {visibleItems.map((item) => {
               const Icon = iconMap[item.icon];
               const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -55,8 +55,9 @@ export function AppHeader({
                 <Link
                   key={item.href}
                   href={item.href}
+                  aria-current={active ? "page" : undefined}
                   className={cn(
-                    "flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                    "flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400",
                     active
                       ? "bg-brand-50 text-brand-700"
                       : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900"

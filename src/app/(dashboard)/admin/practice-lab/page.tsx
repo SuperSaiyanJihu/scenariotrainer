@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus, Settings, Pencil, Copy, Trash2, Loader2, ClipboardList } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { categoryIcon } from "@/lib/practice-lab/ui-meta";
 import type { ScenarioCategory } from "@/generated/prisma/client";
 
@@ -26,6 +27,7 @@ export default function AdminPracticeLabPage() {
   const [loading, setLoading] = useState(true);
   const [canRemove, setCanRemove] = useState(false);
   const [error, setError] = useState("");
+  const [pendingRemoval, setPendingRemoval] = useState<Scenario | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/practice-lab/scenarios")
@@ -45,8 +47,9 @@ export default function AdminPracticeLabPage() {
     }
   }
 
-  async function removeScenario(id: string, title: string) {
-    if (!window.confirm(`Remove "${title}" from the Practice Lab library?`)) return;
+  async function removeScenario() {
+    if (!pendingRemoval) return;
+    const { id } = pendingRemoval;
 
     setError("");
     const res = await fetch(`/api/admin/practice-lab/scenarios/${id}`, {
@@ -55,6 +58,7 @@ export default function AdminPracticeLabPage() {
     const data = await res.json();
     if (!res.ok) {
       setError(data.error ?? "Could not remove scenario");
+      setPendingRemoval(null);
       return;
     }
 
@@ -63,6 +67,7 @@ export default function AdminPracticeLabPage() {
         scenario.id === id ? { ...scenario, status: "ARCHIVED" } : scenario
       )
     );
+    setPendingRemoval(null);
   }
 
   return (
@@ -106,48 +111,63 @@ export default function AdminPracticeLabPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
-          {scenarios.map((s) => {
-            const Icon = categoryIcon[s.category];
-            return (
-              <Card key={s.id}>
-                <CardHeader className="py-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
-                        <Icon className="h-5 w-5" />
-                      </span>
-                      <div>
-                        <CardTitle className="text-lg">{s.title}</CardTitle>
-                        <CardDescription>{s.slug}</CardDescription>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={s.status === "PUBLISHED" ? "success" : "secondary"}>{s.status}</Badge>
-                      <span className="hidden text-sm text-zinc-500 sm:inline">{s._count.attempts} attempts</span>
+        <Card>
+          <CardHeader className="sr-only">
+            <CardTitle>Scenario library</CardTitle>
+          </CardHeader>
+          <CardContent className="divide-y divide-zinc-100 p-0">
+            {scenarios.map((s) => {
+              const Icon = categoryIcon[s.category];
+              return (
+                <div
+                  key={s.id}
+                  className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-zinc-900">{s.title}</p>
+                      <p className="truncate text-sm text-zinc-500">{s.slug}</p>
                     </div>
                   </div>
-                </CardHeader>
-                <CardContent className="flex flex-wrap gap-2 pb-4">
-                  <Button asChild size="sm">
-                    <Link href={`/admin/practice-lab/${s.id}`}>
-                      <Pencil className="h-3.5 w-3.5" /> Edit
-                    </Link>
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => duplicateScenario(s.id)}>
-                    <Copy className="h-3.5 w-3.5" /> Duplicate
-                  </Button>
-                  {canRemove && s.status !== "ARCHIVED" && (
-                    <Button size="sm" variant="ghost" onClick={() => removeScenario(s.id, s.title)}>
-                      <Trash2 className="h-3.5 w-3.5" /> Remove
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+                  <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                    <Badge variant={s.status === "PUBLISHED" ? "success" : "secondary"}>{s.status}</Badge>
+                    <span className="text-xs text-zinc-400">{s._count.attempts} attempts</span>
+                    <div className="ml-auto flex gap-1.5 sm:ml-2">
+                      <Button asChild size="sm">
+                        <Link href={`/admin/practice-lab/${s.id}`}>
+                          <Pencil className="h-3.5 w-3.5" /> Edit
+                        </Link>
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => duplicateScenario(s.id)}>
+                        <Copy className="h-3.5 w-3.5" />
+                        <span className="sr-only sm:not-sr-only">Duplicate</span>
+                      </Button>
+                      {canRemove && s.status !== "ARCHIVED" && (
+                        <Button size="sm" variant="ghost" onClick={() => setPendingRemoval(s)}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                          <span className="sr-only sm:not-sr-only">Remove</span>
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
       )}
+
+      <ConfirmDialog
+        open={!!pendingRemoval}
+        onOpenChange={(open) => !open && setPendingRemoval(null)}
+        title={`Remove "${pendingRemoval?.title ?? ""}"?`}
+        description="This archives the scenario so it no longer appears in employees' Practice Lab. Past attempts and coaching history are kept for reporting."
+        confirmLabel="Remove scenario"
+        onConfirm={removeScenario}
+      />
     </div>
   );
 }

@@ -45,7 +45,8 @@ export function MobileBottomNav({
             <Link
               key={item.href}
               href={item.href}
-              className="flex flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium"
+              aria-current={active ? "page" : undefined}
+              className="flex flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-inset"
             >
               <span
                 className={cn(

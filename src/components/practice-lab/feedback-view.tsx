@@ -122,11 +122,12 @@ export function FeedbackView(props: FeedbackViewProps) {
         <CardContent className="space-y-5">
           {props.reflections.map((reflection, index) => (
             <div key={reflection.id} className="space-y-2">
-              <Label className="text-zinc-900">
+              <Label htmlFor={`reflection-${reflection.id}`} className="text-zinc-900">
                 {index + 1}. {reflection.question}
               </Label>
               <p className="text-xs text-zinc-500">{reflection.purpose}</p>
               <Textarea
+                id={`reflection-${reflection.id}`}
                 value={responses[reflection.id] ?? ""}
                 onChange={(event) =>
                   setResponses({
