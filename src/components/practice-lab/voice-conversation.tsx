@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, Clock, Mic, MicOff, PhoneOff, AlertTriangle } from "lucide-react";
+import { ChevronLeft, Clock, Mic, MicOff, PhoneOff, AlertTriangle, PlayCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +24,24 @@ interface VoiceConversationProps {
   startedAt: string;
 }
 
+function describeMicError(err: unknown): string {
+  const name = err instanceof DOMException ? err.name : "";
+  if (name === "NotAllowedError" || name === "PermissionDeniedError" || name === "SecurityError") {
+    return (
+      "Microphone access was blocked. If no permission prompt appeared, your browser has a saved " +
+      '"block" for this site — click the lock/settings icon in the address bar, set Microphone to ' +
+      "Allow, then try again. On iPhone, also check Settings > Apps > Safari > Microphone."
+    );
+  }
+  if (name === "NotFoundError" || name === "DevicesNotFoundError") {
+    return "No microphone was found. Plug one in or check your system sound settings, then try again.";
+  }
+  if (name === "NotReadableError") {
+    return "Your microphone is in use by another app. Close it and try again.";
+  }
+  return err instanceof Error ? err.message : "Voice connection failed";
+}
+
 export function VoiceConversation({
   attemptId,
   characterName,
@@ -33,7 +51,7 @@ export function VoiceConversation({
   startedAt,
 }: VoiceConversationProps) {
   const router = useRouter();
-  const [status, setStatus] = useState<"connecting" | "connected" | "error" | "ended">("connecting");
+  const [status, setStatus] = useState<"idle" | "connecting" | "connected" | "error" | "ended">("idle");
   const [muted, setMuted] = useState(false);
   const [transcript, setTranscript] = useState<TranscriptMessage[]>([]);
   const [error, setError] = useState("");
@@ -46,6 +64,8 @@ export function VoiceConversation({
   const localStreamRef = useRef<MediaStream | null>(null);
   const transcriptMapRef = useRef<Map<string, TranscriptMessage>>(new Map());
   const transcriptEndRef = useRef<HTMLDivElement>(null);
+  const startingRef = useRef(false);
+  const unmountedRef = useRef(false);
 
   const addTranscript = useCallback((speaker: "EMPLOYEE" | "CHARACTER", content: string, clientId: string) => {
     if (!content.trim()) return;
@@ -70,117 +90,136 @@ export function VoiceConversation({
   }, [transcript]);
 
   useEffect(() => {
-    let cancelled = false;
-
-    async function connect() {
-      if (!navigator.mediaDevices?.getUserMedia) {
-        setStatus("error");
-        setError("Your browser does not support voice practice. Please use text mode.");
-        return;
-      }
-
-      try {
-        const sessionRes = await fetch(`/api/practice-lab/attempts/${attemptId}/voice`);
-        const sessionData = await sessionRes.json();
-        if (!sessionRes.ok) {
-          setStatus("error");
-          setError(sessionData.error ?? "Failed to start voice session");
-          return;
-        }
-
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        if (cancelled) {
-          stream.getTracks().forEach((t) => t.stop());
-          return;
-        }
-        localStreamRef.current = stream;
-
-        const pc = new RTCPeerConnection();
-        pcRef.current = pc;
-
-        const audioEl = document.createElement("audio");
-        audioEl.autoplay = true;
-        audioRef.current = audioEl;
-
-        pc.ontrack = (e) => {
-          audioEl.srcObject = e.streams[0];
-        };
-
-        stream.getTracks().forEach((track) => pc.addTrack(track, stream));
-
-        const dc = pc.createDataChannel("oai-events");
-        dcRef.current = dc;
-
-        dc.onopen = () => {
-          // With server VAD the model waits for the user, so trigger the
-          // character's scripted opening line as soon as the channel is live.
-          dc.send(JSON.stringify({ type: "response.create" }));
-        };
-
-        dc.onmessage = (event) => {
-          try {
-            const msg = JSON.parse(event.data);
-
-            if (msg.type === "response.output_audio_transcript.done") {
-              addTranscript("CHARACTER", msg.transcript ?? "", `char-${msg.response_id ?? Date.now()}`);
-            }
-            if (msg.type === "conversation.item.input_audio_transcription.completed") {
-              addTranscript("EMPLOYEE", msg.transcript ?? "", `emp-${msg.item_id ?? Date.now()}`);
-            }
-            if (msg.type === "response.audio_transcript.done") {
-              addTranscript("CHARACTER", msg.transcript ?? "", `char-alt-${Date.now()}`);
-            }
-          } catch {
-            // ignore parse errors
-          }
-        };
-
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-
-        const sdpResponse = await fetch("https://api.openai.com/v1/realtime/calls", {
-          method: "POST",
-          body: offer.sdp,
-          headers: {
-            Authorization: `Bearer ${sessionData.clientSecret}`,
-            "Content-Type": "application/sdp",
-          },
-        });
-
-        if (!sdpResponse.ok) {
-          setStatus("error");
-          setError("Failed to connect voice session. Try text mode instead.");
-          return;
-        }
-
-        const answerSdp = await sdpResponse.text();
-        await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
-
-        if (!cancelled) {
-          setStatus("connected");
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setStatus("error");
-          const message = err instanceof Error ? err.message : "Voice connection failed";
-          if (message.includes("Permission") || message.includes("NotAllowed")) {
-            setError("Microphone permission denied. Please allow microphone access or use text mode.");
-          } else {
-            setError(message);
-          }
-        }
-      }
-    }
-
-    connect();
-
+    unmountedRef.current = false;
     return () => {
-      cancelled = true;
+      unmountedRef.current = true;
       dcRef.current?.close();
       pcRef.current?.close();
       localStreamRef.current?.getTracks().forEach((t) => t.stop());
     };
-  }, [attemptId, addTranscript]);
+  }, []);
+
+  function teardownConnection() {
+    dcRef.current?.close();
+    pcRef.current?.close();
+    localStreamRef.current?.getTracks().forEach((t) => t.stop());
+    dcRef.current = null;
+    pcRef.current = null;
+    localStreamRef.current = null;
+  }
+
+  // Must be invoked directly from a click: Safari and iOS only show the
+  // microphone permission prompt during a user gesture. Requesting the mic
+  // on page load (the previous behavior) was rejected without any prompt.
+  async function startConversation() {
+    if (startingRef.current) return;
+    startingRef.current = true;
+    setError("");
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setStatus("error");
+      setError("Your browser does not support voice practice. Please use text mode.");
+      startingRef.current = false;
+      return;
+    }
+
+    setStatus("connecting");
+
+    try {
+      // Request the microphone FIRST, while the click's user activation is
+      // still fresh — any awaited network call before this can silently
+      // discard the gesture and with it the permission prompt.
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (unmountedRef.current) {
+        stream.getTracks().forEach((t) => t.stop());
+        return;
+      }
+      localStreamRef.current = stream;
+
+      const sessionRes = await fetch(`/api/practice-lab/attempts/${attemptId}/voice`);
+      const sessionData = await sessionRes.json();
+      if (!sessionRes.ok) {
+        teardownConnection();
+        setStatus("error");
+        setError(sessionData.error ?? "Failed to start voice session");
+        return;
+      }
+
+      const pc = new RTCPeerConnection();
+      pcRef.current = pc;
+
+      const audioEl = document.createElement("audio");
+      audioEl.autoplay = true;
+      audioRef.current = audioEl;
+
+      pc.ontrack = (e) => {
+        audioEl.srcObject = e.streams[0];
+      };
+
+      stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+
+      const dc = pc.createDataChannel("oai-events");
+      dcRef.current = dc;
+
+      dc.onopen = () => {
+        // With server VAD the model waits for the user, so trigger the
+        // character's scripted opening line as soon as the channel is live.
+        dc.send(JSON.stringify({ type: "response.create" }));
+      };
+
+      dc.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+
+          if (msg.type === "response.output_audio_transcript.done") {
+            addTranscript("CHARACTER", msg.transcript ?? "", `char-${msg.response_id ?? Date.now()}`);
+          }
+          if (msg.type === "conversation.item.input_audio_transcription.completed") {
+            addTranscript("EMPLOYEE", msg.transcript ?? "", `emp-${msg.item_id ?? Date.now()}`);
+          }
+          if (msg.type === "response.audio_transcript.done") {
+            addTranscript("CHARACTER", msg.transcript ?? "", `char-alt-${Date.now()}`);
+          }
+        } catch {
+          // ignore parse errors
+        }
+      };
+
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+
+      const sdpResponse = await fetch("https://api.openai.com/v1/realtime/calls", {
+        method: "POST",
+        body: offer.sdp,
+        headers: {
+          Authorization: `Bearer ${sessionData.clientSecret}`,
+          "Content-Type": "application/sdp",
+        },
+      });
+
+      if (!sdpResponse.ok) {
+        teardownConnection();
+        setStatus("error");
+        setError("Failed to connect voice session. Try text mode instead.");
+        return;
+      }
+
+      const answerSdp = await sdpResponse.text();
+      await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
+
+      if (!unmountedRef.current) {
+        setStatus("connected");
+      }
+    } catch (err) {
+      teardownConnection();
+      if (!unmountedRef.current) {
+        setStatus("error");
+        setError(describeMicError(err));
+      }
+    } finally {
+      startingRef.current = false;
+    }
+  }
 
   function toggleMute() {
     const tracks = localStreamRef.current?.getAudioTracks();
@@ -211,9 +250,7 @@ export function VoiceConversation({
         body: JSON.stringify({ messages: transcript }),
       });
 
-      dcRef.current?.close();
-      pcRef.current?.close();
-      localStreamRef.current?.getTracks().forEach((t) => t.stop());
+      teardownConnection();
 
       const res = await fetch(`/api/practice-lab/attempts/${attemptId}/end`, {
         method: "POST",
@@ -236,7 +273,15 @@ export function VoiceConversation({
   const minutes = Math.floor(elapsed / 60);
   const seconds = elapsed % 60;
   const statusLabel =
-    status === "connecting" ? "Connecting..." : status === "connected" ? "Listening" : status === "ended" ? "Ended" : "Error";
+    status === "idle"
+      ? "Ready"
+      : status === "connecting"
+        ? "Connecting..."
+        : status === "connected"
+          ? "Listening"
+          : status === "ended"
+            ? "Ended"
+            : "Error";
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 animate-fade-up">
@@ -292,34 +337,49 @@ export function VoiceConversation({
             </Badge>
           </div>
 
-          <div className="flex items-center gap-3 pt-2">
-            <button
-              type="button"
-              onClick={toggleMute}
-              disabled={status !== "connected"}
-              aria-label={muted ? "Unmute microphone" : "Mute microphone"}
-              className={cn(
-                "flex h-12 w-12 items-center justify-center rounded-full border transition-colors disabled:pointer-events-none disabled:opacity-50",
-                muted
-                  ? "border-amber-200 bg-amber-50 text-amber-700"
-                  : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50"
-              )}
-            >
-              {muted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
-            </button>
-            <button
-              type="button"
-              onClick={endConversation}
-              disabled={ending}
-              aria-label="End conversation"
-              className="flex h-12 w-12 items-center justify-center rounded-full bg-rose-600 text-white shadow-soft transition-colors hover:bg-rose-700 disabled:pointer-events-none disabled:opacity-50"
-            >
-              <PhoneOff className="h-5 w-5" />
-            </button>
-          </div>
-          <p className="text-xs text-zinc-400">
-            This conversation uses AI-generated voice. Your microphone is active during the session.
-          </p>
+          {status === "idle" || status === "error" ? (
+            <div className="flex flex-col items-center gap-3 pt-2">
+              <Button size="lg" onClick={startConversation}>
+                <PlayCircle className="h-5 w-5" />
+                {status === "error" ? "Try Again" : "Start Conversation"}
+              </Button>
+              <p className="max-w-xs text-center text-xs text-zinc-400">
+                Your browser will ask permission to use your microphone. {characterName} speaks first —
+                just respond naturally.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={toggleMute}
+                  disabled={status !== "connected"}
+                  aria-label={muted ? "Unmute microphone" : "Mute microphone"}
+                  className={cn(
+                    "flex h-12 w-12 items-center justify-center rounded-full border transition-colors disabled:pointer-events-none disabled:opacity-50",
+                    muted
+                      ? "border-amber-200 bg-amber-50 text-amber-700"
+                      : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50"
+                  )}
+                >
+                  {muted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={endConversation}
+                  disabled={ending || status === "connecting"}
+                  aria-label="End conversation"
+                  className="flex h-12 w-12 items-center justify-center rounded-full bg-rose-600 text-white shadow-soft transition-colors hover:bg-rose-700 disabled:pointer-events-none disabled:opacity-50"
+                >
+                  {ending ? <Loader2 className="h-5 w-5 animate-spin" /> : <PhoneOff className="h-5 w-5" />}
+                </button>
+              </div>
+              <p className="text-xs text-zinc-400">
+                This conversation uses AI-generated voice. Your microphone is active during the session.
+              </p>
+            </>
+          )}
         </CardContent>
       </Card>
 
@@ -330,7 +390,11 @@ export function VoiceConversation({
         <CardContent>
           <div className="scroll-thin max-h-80 space-y-3 overflow-y-auto" aria-live="polite">
             {transcript.length === 0 ? (
-              <p className="text-sm text-zinc-400">Transcript will appear as you speak...</p>
+              <p className="text-sm text-zinc-400">
+                {status === "idle"
+                  ? "The transcript will appear here once you start the conversation."
+                  : "Transcript will appear as you speak..."}
+              </p>
             ) : (
               transcript.map((msg) => (
                 <div
