@@ -4,9 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  baseline-browser-mapping: 2.11.4
-
 importers:
 
   .:
@@ -150,6 +147,9 @@ importers:
       autoprefixer:
         specifier: ^10.5.4
         version: 10.5.4(postcss@8.5.23)
+      baseline-browser-mapping:
+        specifier: 2.11.4
+        version: 2.11.4
       eslint:
         specifier: ^9
         version: 9.39.5(jiti@1.21.7)
