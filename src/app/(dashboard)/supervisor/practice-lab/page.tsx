@@ -1,9 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Users2,
+  CalendarDays,
+  CheckCircle2,
+  Loader2,
+  ClipboardList,
+  MessageSquareText,
+  Mic,
+  UserPlus,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { getInitials } from "@/lib/utils";
 
 interface AttemptResult {
   id: string;
@@ -114,23 +129,27 @@ export default function SupervisorPracticeLabPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-fade-up">
       <div>
-        <h1 className="text-2xl font-bold">Team Practice Activity</h1>
-        <p className="text-slate-600">Review completion status and assign practice scenarios</p>
+        <h1 className="font-display text-2xl font-semibold tracking-tight text-zinc-900">Team Practice Activity</h1>
+        <p className="mt-1 text-zinc-500">Review completion status and assign practice scenarios</p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Assign Scenario</CardTitle>
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
+              <UserPlus className="h-4 w-4" />
+            </span>
+            <CardTitle>Assign Scenario</CardTitle>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={createAssignment} className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="scenario">Scenario</Label>
-              <select
+              <Select
                 id="scenario"
-                className="flex h-10 w-full rounded-md border border-slate-300 px-3 text-sm"
                 value={form.scenarioId}
                 onChange={(e) => setForm({ ...form, scenarioId: e.target.value })}
                 required
@@ -141,13 +160,12 @@ export default function SupervisorPracticeLabPage() {
                     {s.title}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="employee">Team Member</Label>
-              <select
+              <Select
                 id="employee"
-                className="flex h-10 w-full rounded-md border border-slate-300 px-3 text-sm"
                 value={form.assignedToUserId}
                 onChange={(e) => setForm({ ...form, assignedToUserId: e.target.value })}
                 required
@@ -158,61 +176,74 @@ export default function SupervisorPracticeLabPage() {
                     {u.name} ({u.email})
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="dueDate">Due Date (optional)</Label>
-              <input
+              <Input
                 id="dueDate"
                 type="date"
-                className="flex h-10 w-full rounded-md border border-slate-300 px-3 text-sm"
                 value={form.dueDate}
                 onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
               />
             </div>
-            <div className="flex items-end">
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={form.required}
-                  onChange={(e) => setForm({ ...form, required: e.target.checked })}
-                />
-                Required assignment
-              </label>
+            <div className="flex items-center justify-between rounded-lg border border-zinc-200 px-3 sm:mt-6">
+              <span className="text-sm font-medium text-zinc-700">Required assignment</span>
+              <Switch
+                checked={form.required}
+                onCheckedChange={(checked) => setForm({ ...form, required: checked })}
+              />
             </div>
-            <div className="sm:col-span-2">
+            <div className="flex items-center gap-3 sm:col-span-2">
               <Button type="submit" disabled={assigning}>
+                {assigning ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
                 {assigning ? "Assigning..." : "Assign Scenario"}
               </Button>
-              {assignError && <p className="mt-2 text-sm text-red-600">{assignError}</p>}
-              {assignSuccess && <p className="mt-2 text-sm text-emerald-600">{assignSuccess}</p>}
+              {assignError && <p className="text-sm text-rose-600">{assignError}</p>}
+              {assignSuccess && (
+                <p className="inline-flex items-center gap-1 text-sm text-emerald-600">
+                  <CheckCircle2 className="h-4 w-4" /> {assignSuccess}
+                </p>
+              )}
             </div>
           </form>
         </CardContent>
       </Card>
 
-      <section>
-        <h2 className="mb-3 text-lg font-semibold">Current Assignments</h2>
+      <section className="space-y-4">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">Current Assignments</h2>
         {loading ? (
-          <p className="text-slate-500">Loading...</p>
+          <div className="flex items-center gap-2 text-zinc-500">
+            <Loader2 className="h-4 w-4 animate-spin" /> Loading...
+          </div>
         ) : assignments.length === 0 ? (
-          <Card>
-            <CardContent className="py-6 text-center text-slate-500">
-              No assignments yet.
+          <Card className="border-dashed bg-transparent shadow-none">
+            <CardContent className="flex flex-col items-center gap-2 py-8 text-center">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-100 text-zinc-400">
+                <ClipboardList className="h-5 w-5" />
+              </span>
+              <p className="text-sm text-zinc-500">No assignments yet.</p>
             </CardContent>
           </Card>
         ) : (
           <div className="space-y-2">
             {assignments.map((a) => (
               <Card key={a.id}>
-                <CardContent className="flex items-center justify-between py-4">
+                <CardContent className="flex items-center justify-between gap-3 py-4">
                   <div>
-                    <p className="font-medium">{a.scenario.title}</p>
-                    <p className="text-sm text-slate-500">
-                      {a.assignedTo?.name ?? "Team"} · {a.required ? "Required" : "Optional"}
-                      {a.dueDate ? ` · Due ${new Date(a.dueDate).toLocaleDateString()}` : ""}
+                    <p className="font-medium text-zinc-900">{a.scenario.title}</p>
+                    <p className="mt-0.5 flex items-center gap-1.5 text-sm text-zinc-500">
+                      {a.assignedTo?.name ?? "Team"}
+                      {a.dueDate && (
+                        <span className="inline-flex items-center gap-1">
+                          <CalendarDays className="h-3.5 w-3.5" /> Due {new Date(a.dueDate).toLocaleDateString()}
+                        </span>
+                      )}
                     </p>
                   </div>
+                  <Badge variant={a.required ? "warning" : "secondary"}>
+                    {a.required ? "Required" : "Optional"}
+                  </Badge>
                 </CardContent>
               </Card>
             ))}
@@ -220,33 +251,49 @@ export default function SupervisorPracticeLabPage() {
         )}
       </section>
 
-      <section>
-        <h2 className="mb-3 text-lg font-semibold">Completed Attempts</h2>
+      <section className="space-y-4">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">Completed Attempts</h2>
         {loading ? (
-          <p className="text-slate-500">Loading results...</p>
+          <div className="flex items-center gap-2 text-zinc-500">
+            <Loader2 className="h-4 w-4 animate-spin" /> Loading results...
+          </div>
         ) : attempts.length === 0 ? (
-          <Card>
-            <CardContent className="py-8 text-center text-slate-500">
-              No completed practice attempts from your team yet.
+          <Card className="border-dashed bg-transparent shadow-none">
+            <CardContent className="flex flex-col items-center gap-2 py-10 text-center">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-100 text-zinc-400">
+                <Users2 className="h-5 w-5" />
+              </span>
+              <p className="text-sm text-zinc-500">No completed practice attempts from your team yet.</p>
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-3">
-            {attempts.map((a) => (
-              <Card key={a.id}>
-                <CardHeader className="py-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-base">{a.user.name}</CardTitle>
-                      <p className="text-sm text-slate-500">
-                        {a.scenario.title} · {a.mode}
-                      </p>
+          <div className="space-y-2">
+            {attempts.map((a) => {
+              const ModeIcon = a.mode === "VOICE" ? Mic : MessageSquareText;
+              return (
+                <Card key={a.id}>
+                  <CardHeader className="py-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-xs font-semibold text-white">
+                          {getInitials(a.user.name)}
+                        </span>
+                        <div>
+                          <CardTitle className="text-base">{a.user.name}</CardTitle>
+                          <CardDescription className="flex items-center gap-1.5">
+                            {a.scenario.title}
+                            <ModeIcon className="h-3.5 w-3.5" />
+                          </CardDescription>
+                        </div>
+                      </div>
+                      <Badge variant="success">
+                        <CheckCircle2 className="h-3 w-3" /> Completed
+                      </Badge>
                     </div>
-                    <span className="text-sm text-emerald-700">Completed</span>
-                  </div>
-                </CardHeader>
-              </Card>
-            ))}
+                  </CardHeader>
+                </Card>
+              );
+            })}
           </div>
         )}
       </section>

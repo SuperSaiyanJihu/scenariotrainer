@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Lexend } from "next/font/google";
 import "./globals.css";
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
 import { InstallAppPrompt } from "@/components/pwa/install-app-prompt";
@@ -7,6 +7,11 @@ import { InstallAppPrompt } from "@/components/pwa/install-app-prompt";
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
+});
+
+const lexend = Lexend({
+  subsets: ["latin"],
+  variable: "--font-lexend",
 });
 
 export const metadata: Metadata = {
@@ -32,7 +37,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0284c7",
+  themeColor: "#5b3fdb",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -46,7 +51,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} font-sans antialiased`}>
+      <body className={`${inter.variable} ${lexend.variable} font-sans antialiased`}>
         {children}
         <ServiceWorkerRegister />
         <InstallAppPrompt />

@@ -4,6 +4,16 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  ChevronLeft,
+  Sparkles,
+  CheckCircle2,
+  TrendingUp,
+  Target,
+  RotateCcw,
+  Loader2,
+  Quote,
+} from "lucide-react";
+import {
   Card,
   CardContent,
   CardDescription,
@@ -87,13 +97,18 @@ export function FeedbackView(props: FeedbackViewProps) {
   );
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto max-w-3xl space-y-6 animate-fade-up">
       <div>
-        <Link href="/practice-lab" className="text-sm text-slate-600 hover:underline">
-          Back to Practice Lab
+        <Link
+          href="/practice-lab"
+          className="inline-flex items-center gap-1 text-sm font-medium text-zinc-500 hover:text-brand-600"
+        >
+          <ChevronLeft className="h-4 w-4" /> Back to Practice Lab
         </Link>
-        <h1 className="mt-2 text-2xl font-bold text-slate-900">{props.scenarioTitle}</h1>
-        <p className="text-slate-700">Conversation debrief</p>
+        <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight text-zinc-900">
+          {props.scenarioTitle}
+        </h1>
+        <p className="mt-1 text-zinc-500">Conversation debrief</p>
       </div>
 
       <Card>
@@ -105,10 +120,12 @@ export function FeedbackView(props: FeedbackViewProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
-          {props.reflections.map((reflection) => (
+          {props.reflections.map((reflection, index) => (
             <div key={reflection.id} className="space-y-2">
-              <Label>{reflection.question}</Label>
-              <p className="text-xs text-slate-600">{reflection.purpose}</p>
+              <Label className="text-zinc-900">
+                {index + 1}. {reflection.question}
+              </Label>
+              <p className="text-xs text-zinc-500">{reflection.purpose}</p>
               <Textarea
                 value={responses[reflection.id] ?? ""}
                 onChange={(event) =>
@@ -125,12 +142,17 @@ export function FeedbackView(props: FeedbackViewProps) {
 
           {!props.reflectionCompleted && (
             <>
-              {error && <p className="text-sm text-red-600">{error}</p>}
-              <Button
-                onClick={submitReflections}
-                disabled={submitting || !allAnswered}
-              >
-                {submitting ? "Talking with your coach..." : "Get My Coaching Suggestions"}
+              {error && <p className="text-sm text-rose-600">{error}</p>}
+              <Button onClick={submitReflections} disabled={submitting || !allAnswered}>
+                {submitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Talking with your coach...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4" /> Get My Coaching Suggestions
+                  </>
+                )}
               </Button>
             </>
           )}
@@ -139,12 +161,17 @@ export function FeedbackView(props: FeedbackViewProps) {
 
       {props.reflectionCompleted && (
         <>
-          <Card>
+          <Card className="border-brand-100 bg-gradient-to-br from-brand-50 to-white">
             <CardHeader>
-              <CardTitle>Your coach&apos;s response</CardTitle>
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-white">
+                  <Sparkles className="h-4 w-4" />
+                </span>
+                <CardTitle>Your coach&apos;s response</CardTitle>
+              </div>
             </CardHeader>
             <CardContent>
-              <p className="whitespace-pre-wrap text-slate-700">{props.coachResponse}</p>
+              <p className="whitespace-pre-wrap leading-relaxed text-zinc-700">{props.coachResponse}</p>
             </CardContent>
           </Card>
 
@@ -153,20 +180,30 @@ export function FeedbackView(props: FeedbackViewProps) {
               <CardHeader>
                 <CardTitle>What to carry forward</CardTitle>
               </CardHeader>
-              <CardContent className="grid gap-5 sm:grid-cols-2">
-                <div>
-                  <h3 className="font-medium text-emerald-700">What went well</h3>
-                  <ul className="mt-2 space-y-2 text-sm text-slate-700">
+              <CardContent className="grid gap-6 sm:grid-cols-2">
+                <div className="space-y-3">
+                  <h3 className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-700">
+                    <CheckCircle2 className="h-4 w-4" /> What went well
+                  </h3>
+                  <ul className="space-y-2.5">
                     {props.whatWentWell.map((item) => (
-                      <li key={item}>- {item}</li>
+                      <li key={item} className="flex gap-2 text-sm leading-relaxed text-zinc-700">
+                        <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-emerald-400" />
+                        {item}
+                      </li>
                     ))}
                   </ul>
                 </div>
-                <div>
-                  <h3 className="font-medium text-amber-700">What could go better</h3>
-                  <ul className="mt-2 space-y-2 text-sm text-slate-700">
+                <div className="space-y-3">
+                  <h3 className="inline-flex items-center gap-1.5 text-sm font-semibold text-amber-700">
+                    <TrendingUp className="h-4 w-4" /> What could go better
+                  </h3>
+                  <ul className="space-y-2.5">
                     {props.whatCouldImprove.map((item) => (
-                      <li key={item}>- {item}</li>
+                      <li key={item} className="flex gap-2 text-sm leading-relaxed text-zinc-700">
+                        <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-amber-400" />
+                        {item}
+                      </li>
                     ))}
                   </ul>
                 </div>
@@ -179,28 +216,39 @@ export function FeedbackView(props: FeedbackViewProps) {
               <CardTitle>Three suggestions for next time</CardTitle>
               <CardDescription>Simple ideas you can put into practice</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               {props.suggestions.map((suggestion, index) => (
-                <div key={`${suggestion.title}-${index}`} className="rounded-lg bg-slate-50 p-4">
-                  <p className="font-medium">
-                    {index + 1}. {suggestion.title}
-                  </p>
-                  <p className="mt-1 text-sm text-slate-700">{suggestion.suggestion}</p>
-                  <p className="mt-2 text-sm text-sky-700">
-                    Try it: {suggestion.implementation}
-                  </p>
+                <div key={`${suggestion.title}-${index}`} className="rounded-xl bg-zinc-50 p-4">
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-600 text-xs font-semibold text-white">
+                      {index + 1}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-zinc-900">{suggestion.title}</p>
+                      <p className="mt-1 text-sm text-zinc-600">{suggestion.suggestion}</p>
+                      <div className="mt-2.5 flex items-start gap-2 rounded-lg bg-white px-3 py-2 text-sm text-brand-700 shadow-soft">
+                        <Quote className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        {suggestion.implementation}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               ))}
             </CardContent>
           </Card>
 
           {props.nextPracticeFocus && (
-            <Card>
+            <Card className="border-none bg-zinc-900 text-white shadow-glow">
               <CardHeader>
-                <CardTitle>Your next practice focus</CardTitle>
+                <div className="flex items-center gap-2.5">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10">
+                    <Target className="h-4 w-4" />
+                  </span>
+                  <CardTitle className="text-white">Your next practice focus</CardTitle>
+                </div>
               </CardHeader>
               <CardContent>
-                <p className="text-slate-700">{props.nextPracticeFocus}</p>
+                <p className="text-white/80">{props.nextPracticeFocus}</p>
               </CardContent>
             </Card>
           )}
@@ -209,7 +257,9 @@ export function FeedbackView(props: FeedbackViewProps) {
 
       <div className="flex gap-3">
         <Button asChild>
-          <Link href={`/practice-lab/${props.scenarioSlug}`}>Practice Again</Link>
+          <Link href={`/practice-lab/${props.scenarioSlug}`}>
+            <RotateCcw className="h-4 w-4" /> Practice Again
+          </Link>
         </Button>
         <Button asChild variant="outline">
           <Link href="/practice-lab">Return to Practice Lab</Link>
