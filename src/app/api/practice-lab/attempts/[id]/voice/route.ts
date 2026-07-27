@@ -136,7 +136,13 @@ export async function GET(
           model: practiceLabConfig.realtimeModel,
           instructions,
           audio: {
-            input: { turn_detection: { type: "server_vad" } },
+            input: {
+              turn_detection: { type: "server_vad" },
+              // Without this, OpenAI never emits input transcription events,
+              // the employee's speech never reaches the saved transcript, and
+              // ending the attempt fails as an "empty" conversation.
+              transcription: { model: practiceLabConfig.transcribeModel },
+            },
             output: { voice: "marin" },
           },
         },

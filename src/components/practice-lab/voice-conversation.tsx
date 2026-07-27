@@ -111,6 +111,12 @@ export function VoiceConversation({
         const dc = pc.createDataChannel("oai-events");
         dcRef.current = dc;
 
+        dc.onopen = () => {
+          // With server VAD the model waits for the user, so trigger the
+          // character's scripted opening line as soon as the channel is live.
+          dc.send(JSON.stringify({ type: "response.create" }));
+        };
+
         dc.onmessage = (event) => {
           try {
             const msg = JSON.parse(event.data);
@@ -187,6 +193,15 @@ export function VoiceConversation({
   }
 
   async function endConversation() {
+    // Ending before saying anything cannot produce feedback; catch it here
+    // with a clear message instead of surfacing the server's refusal.
+    if (!transcript.some((m) => m.speaker === "EMPLOYEE")) {
+      setError(
+        `Nothing you said has been captured yet. Say something to ${characterName} first, then end the conversation. If your microphone isn't working, switch to text mode below.`
+      );
+      return;
+    }
+
     setEnding(true);
 
     try {

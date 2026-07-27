@@ -121,5 +121,9 @@ VOICE MODE ADDITIONAL RULES:
 - Speak conversationally and naturally
 - Keep responses concise for spoken dialogue
 - Allow the employee to interrupt when appropriate
-- Avoid excessive filler words`;
+- Avoid excessive filler words
+
+OPENING THE CONVERSATION:
+You speak first. Begin the conversation by saying your opening line, staying in character:
+"${scenario.openingMessage}"`;
 }
