@@ -1,16 +1,41 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { ChevronLeft, ToggleLeft, ShieldCheck, Loader2, Save } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 
 interface Settings {
   practiceLabEnabled: boolean;
   practiceLabVoiceEnabled: boolean;
   supervisorCanViewTranscripts: boolean;
   transcriptRetentionDays: number;
+}
+
+function SettingRow({
+  label,
+  description,
+  checked,
+  onCheckedChange,
+}: {
+  label: string;
+  description?: string;
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 py-1">
+      <div>
+        <p className="text-sm font-medium text-zinc-900">{label}</p>
+        {description && <p className="text-sm text-zinc-500">{description}</p>}
+      </div>
+      <Switch checked={checked} onCheckedChange={onCheckedChange} />
+    </div>
+  );
 }
 
 export default function AdminSettingsPage() {
@@ -43,68 +68,82 @@ export default function AdminSettingsPage() {
   }
 
   if (!settings) {
-    return <p className="text-slate-500">Loading settings...</p>;
+    return (
+      <div className="flex items-center gap-2 text-zinc-500">
+        <Loader2 className="h-4 w-4 animate-spin" /> Loading settings...
+      </div>
+    );
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto max-w-2xl space-y-6 animate-fade-up">
       <div>
-        <h1 className="text-2xl font-bold">Practice Lab Settings</h1>
-        <p className="text-slate-600">Control feature flags and privacy options</p>
+        <Link
+          href="/admin/practice-lab"
+          className="inline-flex items-center gap-1 text-sm font-medium text-zinc-500 hover:text-brand-600"
+        >
+          <ChevronLeft className="h-4 w-4" /> Back to Manage Scenarios
+        </Link>
+        <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight text-zinc-900">
+          Practice Lab Settings
+        </h1>
+        <p className="mt-1 text-zinc-500">Control feature flags and privacy options</p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Features</CardTitle>
-          <CardDescription>Enable or disable Practice Lab capabilities</CardDescription>
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
+              <ToggleLeft className="h-4 w-4" />
+            </span>
+            <div>
+              <CardTitle>Features</CardTitle>
+              <CardDescription>Enable or disable Practice Lab capabilities</CardDescription>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <label className="flex items-center gap-3 text-sm">
-            <input
-              type="checkbox"
-              checked={settings.practiceLabEnabled}
-              onChange={(e) =>
-                setSettings({ ...settings, practiceLabEnabled: e.target.checked })
-              }
-            />
-            Practice Lab enabled
-          </label>
-          <label className="flex items-center gap-3 text-sm">
-            <input
-              type="checkbox"
+        <CardContent className="space-y-4 divide-y divide-zinc-100">
+          <SettingRow
+            label="Practice Lab enabled"
+            checked={settings.practiceLabEnabled}
+            onCheckedChange={(checked) => setSettings({ ...settings, practiceLabEnabled: checked })}
+          />
+          <div className="pt-4">
+            <SettingRow
+              label="Voice mode enabled"
               checked={settings.practiceLabVoiceEnabled}
-              onChange={(e) =>
-                setSettings({ ...settings, practiceLabVoiceEnabled: e.target.checked })
-              }
+              onCheckedChange={(checked) => setSettings({ ...settings, practiceLabVoiceEnabled: checked })}
             />
-            Voice mode enabled
-          </label>
+          </div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Privacy</CardTitle>
-          <CardDescription>Transcript access and retention</CardDescription>
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
+              <ShieldCheck className="h-4 w-4" />
+            </span>
+            <div>
+              <CardTitle>Privacy</CardTitle>
+              <CardDescription>Transcript access and retention</CardDescription>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <label className="flex items-center gap-3 text-sm">
-            <input
-              type="checkbox"
-              checked={settings.supervisorCanViewTranscripts}
-              onChange={(e) =>
-                setSettings({ ...settings, supervisorCanViewTranscripts: e.target.checked })
-              }
-            />
-            Supervisors can view team transcripts
-          </label>
-          <div className="space-y-2">
+        <CardContent className="space-y-5">
+          <SettingRow
+            label="Supervisors can view team transcripts"
+            checked={settings.supervisorCanViewTranscripts}
+            onCheckedChange={(checked) => setSettings({ ...settings, supervisorCanViewTranscripts: checked })}
+          />
+          <div className="space-y-2 border-t border-zinc-100 pt-5">
             <Label htmlFor="retention">Transcript retention (days)</Label>
             <Input
               id="retention"
               type="number"
               min={1}
               max={3650}
+              className="max-w-[160px]"
               value={settings.transcriptRetentionDays}
               onChange={(e) =>
                 setSettings({
@@ -117,10 +156,13 @@ export default function AdminSettingsPage() {
         </CardContent>
       </Card>
 
-      <Button onClick={save} disabled={saving}>
-        {saving ? "Saving..." : "Save Settings"}
-      </Button>
-      {message && <p className="text-sm text-slate-600">{message}</p>}
+      <div className="flex items-center gap-3">
+        <Button onClick={save} disabled={saving}>
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          {saving ? "Saving..." : "Save Settings"}
+        </Button>
+        {message && <p className="text-sm text-zinc-500">{message}</p>}
+      </div>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface BeforeInstallPromptEvent extends Event {
@@ -33,11 +34,29 @@ export function InstallAppPrompt() {
   if (isStandalone || !visible || !deferred) return null;
 
   return (
-    <div className="fixed inset-x-4 bottom-20 z-50 rounded-xl border border-sky-200 bg-white p-4 shadow-lg sm:bottom-6 sm:left-auto sm:right-6 sm:max-w-sm">
-      <p className="text-sm font-semibold text-slate-900">Install ScenarioTrainer</p>
-      <p className="mt-1 text-sm text-slate-600">
-        Add this app to your home screen for quicker Practice Lab access.
-      </p>
+    <div className="fixed inset-x-4 bottom-20 z-50 animate-fade-up rounded-xl border border-zinc-200/80 bg-white p-4 shadow-card-hover sm:bottom-6 sm:left-auto sm:right-6 sm:max-w-sm relative">
+      <button
+        type="button"
+        aria-label="Dismiss"
+        onClick={() => {
+          localStorage.setItem("scenario-trainer-install-dismissed", "1");
+          setVisible(false);
+        }}
+        className="absolute right-3 top-3 text-zinc-400 hover:text-zinc-600"
+      >
+        <X className="h-4 w-4" />
+      </button>
+      <div className="flex items-start gap-3 pr-4">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 text-white">
+          <Sparkles className="h-4 w-4" />
+        </span>
+        <div>
+          <p className="text-sm font-semibold text-zinc-900">Install ScenarioTrainer</p>
+          <p className="mt-1 text-sm text-zinc-500">
+            Add this app to your home screen for quicker Practice Lab access.
+          </p>
+        </div>
+      </div>
       <div className="mt-3 flex gap-2">
         <Button
           size="sm"
