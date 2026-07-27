@@ -14,7 +14,7 @@ export default async function DashboardPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Welcome, {session.user.name}</h1>
-        <p className="text-slate-600">Excel Aquatics Performance Pulse</p>
+        <p className="text-slate-700">Welcome to ScenarioTrainer</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -32,7 +32,8 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        {session.user.role === "ADMINISTRATOR" && (
+        {(session.user.role === "ADMINISTRATOR" ||
+          session.user.role === "SUPERADMIN") && (
           <Card>
             <CardHeader>
               <CardTitle>Manage Scenarios</CardTitle>
@@ -46,11 +47,13 @@ export default async function DashboardPage() {
           </Card>
         )}
 
-        {(session.user.role === "SUPERVISOR" || session.user.role === "ADMINISTRATOR") && (
+        {(session.user.role === "SUPERVISOR" ||
+          session.user.role === "ADMINISTRATOR" ||
+          session.user.role === "SUPERADMIN") && (
           <Card>
             <CardHeader>
-              <CardTitle>Team Results</CardTitle>
-              <CardDescription>Review practice completion and scores for your team.</CardDescription>
+              <CardTitle>Team Activity</CardTitle>
+              <CardDescription>Review practice completion for your team.</CardDescription>
             </CardHeader>
             <CardContent>
               <Button asChild variant="outline">

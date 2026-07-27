@@ -1,9 +1,15 @@
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { formatCategory, formatDifficulty, formatDuration, formatScore } from "@/lib/utils";
+import { formatCategory, formatDifficulty, formatDuration } from "@/lib/utils";
 import { getScenarioDetail, requireSessionUser } from "@/lib/practice-lab/server-data";
 import { ScenarioStartButtons } from "@/components/practice-lab/scenario-start-buttons";
 
@@ -27,10 +33,10 @@ export default async function ScenarioDetailPage({
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
         <Link href="/practice-lab" className="text-sm text-sky-600 hover:underline">
-          ← Back to Practice Lab
+          Back to Practice Lab
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-slate-900">{scenario.title}</h1>
-        <p className="mt-2 text-slate-600">{scenario.description}</p>
+        <p className="mt-2 text-slate-700">{scenario.description}</p>
       </div>
 
       <Card>
@@ -42,27 +48,21 @@ export default async function ScenarioDetailPage({
             <Badge variant="secondary">{formatCategory(scenario.category)}</Badge>
             <Badge variant="secondary">{formatDifficulty(scenario.difficulty)}</Badge>
             <Badge variant="secondary">{formatDuration(scenario.estimatedMinutes)}</Badge>
-            <Badge variant="secondary">Pass: {scenario.passingScore}%</Badge>
           </div>
           <div>
             <h3 className="font-medium">Your Role</h3>
-            <p className="text-slate-600">{scenario.employeeRole}</p>
+            <p className="text-slate-700">{scenario.employeeRole}</p>
           </div>
           <div>
             <h3 className="font-medium">You will speak with</h3>
-            <p className="text-slate-600">
-              {scenario.aiCharacterName} — {scenario.aiCharacterRole}
+            <p className="text-slate-700">
+              {scenario.aiCharacterName} - {scenario.aiCharacterRole}
             </p>
-            <p className="mt-1 text-sm text-slate-500">{scenario.aiCharacterDescription}</p>
+            <p className="mt-1 text-sm text-slate-600">{scenario.aiCharacterDescription}</p>
           </div>
-          <div>
-            <h3 className="font-medium">Skills Evaluated</h3>
-            <ul className="mt-1 list-inside list-disc text-sm text-slate-600">
-              {scenario.rubricCriteria.map((c) => (
-                <li key={c.id}>{c.name} ({c.weight}%)</li>
-              ))}
-            </ul>
-          </div>
+          <p className="text-sm text-slate-600">
+            This is a practice conversation. There are no grades or pass/fail results.
+          </p>
         </CardContent>
       </Card>
 
@@ -88,17 +88,16 @@ export default async function ScenarioDetailPage({
                 >
                   <div>
                     <p className="text-sm font-medium">
-                      {attempt.startedAt.toLocaleDateString()} — {attempt.mode}
+                      {attempt.startedAt.toLocaleDateString()} - {attempt.mode}
                     </p>
-                    <p className="text-xs text-slate-500">{attempt.status}</p>
+                    <p className="text-xs text-slate-600">{attempt.status}</p>
                   </div>
                   <div className="flex items-center gap-3">
-                    {attempt.overallScore != null && (
-                      <span className="text-sm font-semibold">{formatScore(attempt.overallScore)}</span>
-                    )}
                     {attempt.status === "COMPLETED" && (
                       <Button asChild size="sm" variant="outline">
-                        <Link href={`/practice-lab/attempts/${attempt.id}/feedback`}>Review Feedback</Link>
+                        <Link href={`/practice-lab/attempts/${attempt.id}/feedback`}>
+                          Review Feedback
+                        </Link>
                       </Button>
                     )}
                     {attempt.status === "IN_PROGRESS" && (

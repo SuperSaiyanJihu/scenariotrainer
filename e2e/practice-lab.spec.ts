@@ -15,7 +15,7 @@ test.describe("Practice Lab authentication", () => {
   test("employee can sign in and open Practice Lab", async ({ page }) => {
     await page.goto("/login");
     await page.getByLabel("Email").fill("employee@goswimexcel.com");
-    await page.getByLabel("Password").fill("password123");
+    await page.getByLabel("Password").fill(process.env.SEED_DEMO_PASSWORD ?? "");
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page).toHaveURL(/dashboard/);
     await page.goto("/practice-lab");
@@ -25,7 +25,7 @@ test.describe("Practice Lab authentication", () => {
   test("employee can open a scenario detail page", async ({ page }) => {
     await page.goto("/login");
     await page.getByLabel("Email").fill("employee@goswimexcel.com");
-    await page.getByLabel("Password").fill("password123");
+    await page.getByLabel("Password").fill(process.env.SEED_DEMO_PASSWORD ?? "");
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page).toHaveURL(/dashboard/);
     await page.goto("/practice-lab");
@@ -39,7 +39,7 @@ test.describe("Practice Lab authentication", () => {
   test("unauthorized admin routes are blocked for employees", async ({ page }) => {
     await page.goto("/login");
     await page.getByLabel("Email").fill("employee@goswimexcel.com");
-    await page.getByLabel("Password").fill("password123");
+    await page.getByLabel("Password").fill(process.env.SEED_DEMO_PASSWORD ?? "");
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page).toHaveURL(/dashboard/);
     await page.goto("/admin/practice-lab");
@@ -49,18 +49,18 @@ test.describe("Practice Lab authentication", () => {
   test("supervisor can open team results", async ({ page }) => {
     await page.goto("/login");
     await page.getByLabel("Email").fill("supervisor@goswimexcel.com");
-    await page.getByLabel("Password").fill("password123");
+    await page.getByLabel("Password").fill(process.env.SEED_DEMO_PASSWORD ?? "");
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page).toHaveURL(/dashboard/);
     await page.goto("/supervisor/practice-lab");
-    await expect(page.getByRole("heading", { name: "Team Practice Results" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Team Practice Activity" })).toBeVisible();
     await expect(page.getByText("Assign Scenario")).toBeVisible();
   });
 
-  test("administrator can open scenario manager", async ({ page }) => {
+  test("superadmin can open scenario manager", async ({ page }) => {
     await page.goto("/login");
-    await page.getByLabel("Email").fill("admin@goswimexcel.com");
-    await page.getByLabel("Password").fill("password123");
+    await page.getByLabel("Email").fill("superadmin@goswimexcel.com");
+    await page.getByLabel("Password").fill(process.env.SEED_DEMO_PASSWORD ?? "");
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page).toHaveURL(/dashboard/);
     await page.goto("/admin/practice-lab");

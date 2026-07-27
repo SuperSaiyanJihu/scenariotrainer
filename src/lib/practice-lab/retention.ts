@@ -3,7 +3,7 @@ import { logPracticeEvent } from "@/lib/practice-lab/logger";
 
 /**
  * Soft-purge old transcripts according to AppSettings.transcriptRetentionDays.
- * Keeps attempt metadata and scores; removes message content beyond retention.
+ * Keeps attempt completion metadata; removes message content beyond retention.
  */
 export async function enforceTranscriptRetention(): Promise<{ purgedAttempts: number }> {
   const settings = await prisma.appSettings.findUnique({ where: { id: "default" } });

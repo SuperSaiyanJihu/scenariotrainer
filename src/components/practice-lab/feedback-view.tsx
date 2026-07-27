@@ -3,255 +3,213 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { formatScore } from "@/lib/utils";
-
-interface CriterionScore {
-  criterionNameSnapshot: string;
-  weightSnapshot: number;
-  rawScore: number;
-  feedback: string;
-  evidence: unknown;
-}
 
 interface Reflection {
   id: string;
   question: string;
   purpose: string;
   employeeResponse: string | null;
-  aiFollowUp: string | null;
+}
+
+interface CoachingSuggestion {
+  title: string;
+  suggestion: string;
+  implementation: string;
 }
 
 interface FeedbackViewProps {
   attemptId: string;
   scenarioSlug: string;
   scenarioTitle: string;
-  overallScore: number;
-  passed: boolean;
-  passingScore: number;
-  overallSummary: string;
-  strengths: Array<{ title: string; explanation: string }>;
-  opportunities: Array<{ title: string; explanation: string; betterApproach: string }>;
-  suggestedLanguage: Array<{ situation: string; suggestion: string }>;
-  criticalErrors: Array<{ criticalErrorId: string; detected: boolean; explanation: string }>;
+  coachResponse: string;
+  whatWentWell: string[];
+  whatCouldImprove: string[];
+  suggestions: CoachingSuggestion[];
   nextPracticeFocus: string;
-  criterionScores: CriterionScore[];
   reflections: Reflection[];
   reflectionCompleted: boolean;
-  status: string;
 }
 
 export function FeedbackView(props: FeedbackViewProps) {
   const router = useRouter();
-  const [responses, setResponses] = useState<Record<string, string>>({});
+  const [responses, setResponses] = useState<Record<string, string>>(
+    Object.fromEntries(
+      props.reflections.map((reflection) => [
+        reflection.id,
+        reflection.employeeResponse ?? "",
+      ])
+    )
+  );
   const [submitting, setSubmitting] = useState(false);
-  const [retrying, setRetrying] = useState(false);
-  const [submitted, setSubmitted] = useState(props.reflectionCompleted);
+  const [error, setError] = useState("");
 
   async function submitReflections() {
     setSubmitting(true);
-    const reflections = props.reflections
-      .filter((r) => responses[r.id]?.trim())
-      .map((r) => ({ id: r.id, response: responses[r.id] }));
+    setError("");
 
-    await fetch(`/api/practice-lab/attempts/${props.attemptId}/reflection`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ reflections }),
-    });
+    const reflections = props.reflections.map((reflection) => ({
+      id: reflection.id,
+      response: responses[reflection.id]?.trim() ?? "",
+    }));
 
-    setSubmitted(true);
+    const response = await fetch(
+      `/api/practice-lab/attempts/${props.attemptId}/reflection`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reflections }),
+      }
+    );
+    const data = await response.json();
+
+    if (!response.ok) {
+      setError(data.error ?? "Your AI coach could not respond. Please try again.");
+      setSubmitting(false);
+      return;
+    }
+
+    router.refresh();
     setSubmitting(false);
   }
 
-  async function retryEvaluation() {
-    setRetrying(true);
-    const res = await fetch(`/api/practice-lab/attempts/${props.attemptId}/retry-evaluation`, {
-      method: "POST",
-    });
-    if (res.ok) {
-      router.refresh();
-    }
-    setRetrying(false);
-  }
-
-  if (props.status === "FAILED") {
-    return (
-      <Card>
-        <CardContent className="py-8 text-center">
-          <p className="text-slate-600">Evaluation could not be completed.</p>
-          <Button onClick={retryEvaluation} disabled={retrying} className="mt-4">
-            {retrying ? "Retrying..." : "Retry Evaluation"}
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const detectedErrors = props.criticalErrors.filter((e) => e.detected);
+  const allAnswered = props.reflections.every(
+    (reflection) => responses[reflection.id]?.trim()
+  );
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
-        <Link href="/practice-lab" className="text-sm text-sky-600 hover:underline">
-          ← Back to Practice Lab
+        <Link href="/practice-lab" className="text-sm text-slate-600 hover:underline">
+          Back to Practice Lab
         </Link>
-        <h1 className="mt-2 text-2xl font-bold">{props.scenarioTitle}</h1>
-        <p className="text-slate-600">Your practice feedback</p>
+        <h1 className="mt-2 text-2xl font-bold text-slate-900">{props.scenarioTitle}</h1>
+        <p className="text-slate-700">Conversation debrief</p>
       </div>
 
       <Card>
-        <CardContent className="flex items-center justify-between py-6">
-          <div>
-            <p className="text-4xl font-bold">{formatScore(props.overallScore)}</p>
-            <p className="text-slate-500">Overall Score (pass: {props.passingScore}%)</p>
-          </div>
-          <Badge variant={props.passed ? "success" : "warning"} className="text-base px-4 py-1">
-            {props.passed ? "Passed" : "Needs More Practice"}
-          </Badge>
-        </CardContent>
-      </Card>
-
-      <Card>
         <CardHeader>
-          <CardTitle>Summary</CardTitle>
+          <CardTitle>Let's reflect first</CardTitle>
+          <CardDescription>
+            There are no grades or scores. Think through the conversation in your own
+            words, then your AI coach will offer three practical suggestions.
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <p className="text-slate-700">{props.overallSummary}</p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Rubric Breakdown</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {props.criterionScores.map((cs) => (
-            <div key={cs.criterionNameSnapshot} className="border-b border-slate-100 pb-3 last:border-0">
-              <div className="flex justify-between">
-                <span className="font-medium">{cs.criterionNameSnapshot}</span>
-                <span className="text-sm text-slate-500">{cs.weightSnapshot}% · {cs.rawScore}</span>
-              </div>
-              <p className="mt-1 text-sm text-slate-600">{cs.feedback}</p>
+        <CardContent className="space-y-5">
+          {props.reflections.map((reflection) => (
+            <div key={reflection.id} className="space-y-2">
+              <Label>{reflection.question}</Label>
+              <p className="text-xs text-slate-600">{reflection.purpose}</p>
+              <Textarea
+                value={responses[reflection.id] ?? ""}
+                onChange={(event) =>
+                  setResponses({
+                    ...responses,
+                    [reflection.id]: event.target.value,
+                  })
+                }
+                disabled={props.reflectionCompleted}
+                rows={3}
+              />
             </div>
           ))}
-        </CardContent>
-      </Card>
 
-      {props.strengths.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>What You Did Well</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {props.strengths.map((s, i) => (
-              <div key={i}>
-                <p className="font-medium">{s.title}</p>
-                <p className="text-sm text-slate-600">{s.explanation}</p>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
-      {props.opportunities.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Opportunities to Improve</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {props.opportunities.map((o, i) => (
-              <div key={i}>
-                <p className="font-medium">{o.title}</p>
-                <p className="text-sm text-slate-600">{o.explanation}</p>
-                <p className="mt-1 text-sm text-sky-700">Try: {o.betterApproach}</p>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
-      {detectedErrors.length > 0 && (
-        <Card className="border-red-200">
-          <CardHeader>
-            <CardTitle className="text-red-700">Critical Errors</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {detectedErrors.map((e, i) => (
-              <p key={i} className="text-sm text-red-600">{e.explanation}</p>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
-      {props.suggestedLanguage.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Suggested Language</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {props.suggestedLanguage.map((s, i) => (
-              <div key={i}>
-                <p className="text-sm font-medium text-slate-500">{s.situation}</p>
-                <p className="text-slate-700">&ldquo;{s.suggestion}&rdquo;</p>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Next Practice Focus</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-slate-700">{props.nextPracticeFocus}</p>
-        </CardContent>
-      </Card>
-
-      {props.reflections.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Reflection</CardTitle>
-            <CardDescription>Take a moment to reflect on your practice</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {props.reflections.map((r) => (
-              <div key={r.id} className="space-y-2">
-                <Label>{r.question}</Label>
-                {submitted && r.employeeResponse ? (
-                  <div>
-                    <p className="text-sm text-slate-700">{r.employeeResponse}</p>
-                    {r.aiFollowUp && (
-                      <p className="mt-2 text-sm text-sky-700">{r.aiFollowUp}</p>
-                    )}
-                  </div>
-                ) : (
-                  <Textarea
-                    value={responses[r.id] ?? ""}
-                    onChange={(e) => setResponses({ ...responses, [r.id]: e.target.value })}
-                    disabled={submitted}
-                    rows={3}
-                  />
-                )}
-              </div>
-            ))}
-            {!submitted && (
-              <Button onClick={submitReflections} disabled={submitting}>
-                {submitting ? "Saving..." : "Save Reflections"}
+          {!props.reflectionCompleted && (
+            <>
+              {error && <p className="text-sm text-red-600">{error}</p>}
+              <Button
+                onClick={submitReflections}
+                disabled={submitting || !allAnswered}
+              >
+                {submitting ? "Talking with your coach..." : "Get My Coaching Suggestions"}
               </Button>
-            )}
-          </CardContent>
-        </Card>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      {props.reflectionCompleted && (
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle>Your coach's response</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="whitespace-pre-wrap text-slate-700">{props.coachResponse}</p>
+            </CardContent>
+          </Card>
+
+          {(props.whatWentWell.length > 0 || props.whatCouldImprove.length > 0) && (
+            <Card>
+              <CardHeader>
+                <CardTitle>What to carry forward</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-5 sm:grid-cols-2">
+                <div>
+                  <h3 className="font-medium text-emerald-700">What went well</h3>
+                  <ul className="mt-2 space-y-2 text-sm text-slate-700">
+                    {props.whatWentWell.map((item) => (
+                      <li key={item}>- {item}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <h3 className="font-medium text-amber-700">What could go better</h3>
+                  <ul className="mt-2 space-y-2 text-sm text-slate-700">
+                    {props.whatCouldImprove.map((item) => (
+                      <li key={item}>- {item}</li>
+                    ))}
+                  </ul>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Three suggestions for next time</CardTitle>
+              <CardDescription>Simple ideas you can put into practice</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {props.suggestions.map((suggestion, index) => (
+                <div key={`${suggestion.title}-${index}`} className="rounded-lg bg-slate-50 p-4">
+                  <p className="font-medium">
+                    {index + 1}. {suggestion.title}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-700">{suggestion.suggestion}</p>
+                  <p className="mt-2 text-sm text-sky-700">
+                    Try it: {suggestion.implementation}
+                  </p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          {props.nextPracticeFocus && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Your next practice focus</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-slate-700">{props.nextPracticeFocus}</p>
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
 
       <div className="flex gap-3">
         <Button asChild>
-          <Link href={`/practice-lab/${props.scenarioSlug}`}>Try Again</Link>
+          <Link href={`/practice-lab/${props.scenarioSlug}`}>Practice Again</Link>
         </Button>
         <Button asChild variant="outline">
           <Link href="/practice-lab">Return to Practice Lab</Link>

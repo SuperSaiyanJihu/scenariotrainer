@@ -1,130 +1,63 @@
-# Practice Lab — Developer Documentation
+# Practice Lab — Developer Guide
 
 ## Architecture
 
-Performance Pulse is a Next.js 15 application with App Router, using:
+- Next.js 15 App Router, React 19, and Tailwind CSS
+- PostgreSQL with Prisma
+- NextAuth JWT sessions with Employee, Supervisor, Administrator, and Superadmin roles
+- OpenAI Responses API for text role-play and post-reflection coaching
+- OpenAI Realtime API over WebRTC for voice practice
 
-- **Frontend**: React 19, Tailwind CSS, Radix UI primitives
-- **Backend**: Next.js API routes (server-side)
-- **Database**: PostgreSQL via Prisma ORM
-- **Auth**: NextAuth.js v5 with JWT sessions and role-based access
-- **AI**: OpenAI Responses API (text role-play + evaluation), Realtime API (voice)
+## Conversation lifecycle
 
-## Data Model
+1. The server creates an attempt with a snapshot of the selected scenario.
+2. The employee talks with the AI character by text or voice.
+3. Character instructions remain server-side and employee messages are treated as
+   untrusted conversation content.
+4. Ending the conversation creates three fixed reflection prompts:
+   - What went well?
+   - What did not go well?
+   - What would you change or do better next time?
+5. After all three answers are submitted, the server sends the transcript and
+   reflections to the OpenAI Responses API.
+6. Structured output is validated with Zod and requires exactly three coaching
+   suggestions, each with an implementation step.
+7. The conversational coaching response is saved and displayed to the employee.
 
-Core Practice Lab entities:
+No score, grade, ranking, rubric, or pass/fail result is generated or displayed.
+Legacy nullable score columns remain in the initial schema for migration compatibility
+but are always written as `null`.
 
-| Model | Purpose |
-|-------|---------|
-| `PracticeScenario` | Scenario definition with character, logic, and settings |
-| `PracticeRubricCriterion` | Weighted evaluation criteria (must total 100%) |
-| `PracticeCriticalError` | Automatic-failure error definitions |
-| `PracticeAssignment` | Scenario assignments to users/teams |
-| `PracticeAttempt` | Individual practice session with scenario snapshot |
-| `PracticeMessage` | Transcript messages (employee, character, system) |
-| `PracticeEvaluation` | Structured evaluation results |
-| `PracticeCriterionScore` | Per-criterion scores with evidence |
-| `PracticeReflection` | Post-evaluation reflection Q&A |
+## OpenAI integration
 
-## Text Role-Play Lifecycle
+The SDK reads `OPENAI_API_KEY` only on the server. Model defaults are:
 
-1. Employee selects scenario and mode (text)
-2. Server validates authorization, creates attempt with scenario snapshot
-3. Opening message saved as first character message
-4. Employee sends message → server calls OpenAI Responses API with protected system prompt
-5. Character response saved to transcript
-6. Employee clicks "End Conversation"
-7. Attempt status → `EVALUATING`
-8. Separate evaluator call with structured output schema
-9. Application code calculates weighted scores and pass/fail
-10. Results saved; employee views feedback and completes reflection
-
-## Voice Role-Play Lifecycle
-
-1. Employee selects voice mode
-2. Server creates attempt and returns opening message
-3. Browser requests ephemeral credential from `/api/practice-lab/attempts/[id]/voice`
-4. Server calls OpenAI `client_secrets` endpoint (no permanent key exposed)
-5. Browser establishes WebRTC connection via OpenAI Realtime API
-6. Live transcript captured via data channel events
-7. On end: transcript synced to server, same evaluator runs
-8. Standard feedback and reflection flow
-
-## Prompt Separation
-
-Three distinct prompt contexts:
-
-1. **Role-play system prompt** — Character behavior, hidden info, escalation rules. Protected server-side. Includes injection resistance instructions.
-2. **Evaluator system prompt** — Rubric, critical errors, policy context. Never sent to role-play model.
-3. **Transcript** — Treated as untrusted evidence by evaluator.
-
-## Evaluation Schema
-
-Validated with Zod (`src/lib/practice-lab/evaluation-schema.ts`). OpenAI structured outputs via Responses API `text.format` with `json_schema` and `strict: true`.
-
-Weighted scores calculated in application code (`src/lib/practice-lab/scoring.ts`), not by the model.
-
-## Security Model
-
-- OpenAI API key server-side only
-- Ephemeral voice credentials (short-lived, no permanent key in browser)
-- Authorization on every API route
-- Role-based transcript access (supervisor scope respected)
-- Scenario snapshots preserve historical interpretability
-- Audit logging for admin changes
-- Rate limiting via turn/duration/retry limits
-- Input length limits (2000 chars per message)
-
-## Environment Variables
-
-See `.env.example`. Models configurable without code changes.
-
-## Testing
-
-Unit tests in `src/lib/practice-lab/scoring.test.ts` cover:
-- Rubric weight validation
-- Weighted score calculation
-- Pass/fail determination
-- Evaluation schema validation
-- Prompt injection boundaries
-- Voice event deduplication
-
-External AI calls are not made in tests.
-
-## Adding Rubric Criteria
-
-Administrators add criteria via the scenario builder. Weights must total 100%. Each criterion needs:
-- Name, description, weight
-- Scoring guidance, positive/negative indicators
-
-## Assigning Scenarios
-
-Supervisors and administrators can assign published scenarios from **Team Results**:
-1. Choose a scenario and team member
-2. Optionally set a due date and whether the assignment is required
-3. Employees see assigned scenarios in Practice Lab
-
-Administrators can also configure feature flags and transcript privacy under **Settings**.
-
-## Changing Models Safely
-
-Update environment variables:
-```
-OPENAI_ROLEPLAY_MODEL=gpt-4o-mini
-OPENAI_EVALUATION_MODEL=gpt-4o-mini
-OPENAI_REALTIME_MODEL=gpt-4o-realtime-preview
+```text
+OPENAI_ROLEPLAY_MODEL=gpt-5.6
+OPENAI_COACHING_MODEL=gpt-5.6
+OPENAI_REALTIME_MODEL=gpt-realtime-2.1
 ```
 
-Test with admin preview before deploying to production.
+Text calls use the Responses API with application instructions separated from user
+input. Coaching uses strict JSON Schema output. Voice uses server-minted ephemeral
+client secrets and includes a hashed safety identifier; the permanent API key never
+reaches the browser.
 
-## Mobile / Installable App
+## Authorization
 
-Performance Pulse is a Progressive Web App (PWA):
+- Employees access their own attempts.
+- Supervisors access completion activity for direct reports.
+- Administrators configure the product and manage scenarios.
+- Superadmins inherit administrator access and can remove scenarios from the library.
 
-- Install from Chrome/Edge on desktop, Android, or Chromebook
-- On iOS Safari: Share → Add to Home Screen
-- Runs in standalone display mode with home-screen icon
-- Service worker caches shell assets; API/auth responses are never cached
-- Practice Lab works in the installed app with text and voice modes
+Scenario removal is an audited archive operation so historical attempts remain intact.
 
-This keeps one codebase for web and installable app experiences.
+## Security and operations
+
+- Configure API, auth, and database secrets in the deployment platform.
+- Demo seeding requires `SEED_DEMO_PASSWORD` and should not run in production.
+- API/auth responses are excluded from service-worker caching.
+- Transcript retention and supervisor transcript access are configurable.
+- The included rate limiter is process-local and assumes a single application instance;
+  replace it with a shared store before scaling horizontally.
+- CI runs tests, lint, and a production build on pushes and pull requests.

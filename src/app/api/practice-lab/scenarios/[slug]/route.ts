@@ -19,9 +19,6 @@ export async function GET(
 
   const scenario = await prisma.practiceScenario.findUnique({
     where: { slug },
-    include: {
-      rubricCriteria: { orderBy: { sortOrder: "asc" } },
-    },
   });
 
   if (!scenario || scenario.status !== "PUBLISHED") {
@@ -40,8 +37,6 @@ export async function GET(
       status: true,
       startedAt: true,
       endedAt: true,
-      overallScore: true,
-      passed: true,
       durationSeconds: true,
     },
     orderBy: { startedAt: "desc" },

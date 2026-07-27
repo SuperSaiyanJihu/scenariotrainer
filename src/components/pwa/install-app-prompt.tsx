@@ -22,7 +22,7 @@ export function InstallAppPrompt() {
     const onBeforeInstall = (event: Event) => {
       event.preventDefault();
       setDeferred(event as BeforeInstallPromptEvent);
-      const dismissed = localStorage.getItem("pulse-install-dismissed");
+      const dismissed = localStorage.getItem("scenario-trainer-install-dismissed");
       if (!dismissed) setVisible(true);
     };
 
@@ -34,7 +34,7 @@ export function InstallAppPrompt() {
 
   return (
     <div className="fixed inset-x-4 bottom-20 z-50 rounded-xl border border-sky-200 bg-white p-4 shadow-lg sm:bottom-6 sm:left-auto sm:right-6 sm:max-w-sm">
-      <p className="text-sm font-semibold text-slate-900">Install Performance Pulse</p>
+      <p className="text-sm font-semibold text-slate-900">Install ScenarioTrainer</p>
       <p className="mt-1 text-sm text-slate-600">
         Add this app to your home screen for quicker Practice Lab access.
       </p>
@@ -47,7 +47,7 @@ export function InstallAppPrompt() {
             setVisible(false);
             setDeferred(null);
             if (choice.outcome === "dismissed") {
-              localStorage.setItem("pulse-install-dismissed", "1");
+              localStorage.setItem("scenario-trainer-install-dismissed", "1");
             }
           }}
         >
@@ -57,7 +57,7 @@ export function InstallAppPrompt() {
           size="sm"
           variant="outline"
           onClick={() => {
-            localStorage.setItem("pulse-install-dismissed", "1");
+            localStorage.setItem("scenario-trainer-install-dismissed", "1");
             setVisible(false);
           }}
         >

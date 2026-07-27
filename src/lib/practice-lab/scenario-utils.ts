@@ -60,9 +60,7 @@ export function parseScenarioSnapshot(snapshot: unknown): ScenarioSnapshot {
 }
 
 export function toPublicScenario(
-  scenario: PracticeScenario & {
-    rubricCriteria: PracticeRubricCriterion[];
-  }
+  scenario: PracticeScenario
 ) {
   return {
     id: scenario.id,
@@ -77,13 +75,6 @@ export function toPublicScenario(
     aiCharacterRole: scenario.aiCharacterRole,
     aiCharacterDescription: scenario.aiCharacterDescription,
     modeAvailability: scenario.modeAvailability,
-    passingScore: scenario.passingScore,
     status: scenario.status,
-    rubricCriteria: scenario.rubricCriteria.map((c) => ({
-      id: c.id,
-      name: c.name,
-      description: c.description,
-      weight: c.weight,
-    })),
   };
 }

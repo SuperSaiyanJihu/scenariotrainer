@@ -11,7 +11,6 @@ export async function getScenarioLibrary(userId: string, teamId: string | null) 
 
   const publishedScenarios = await prisma.practiceScenario.findMany({
     where: { status: "PUBLISHED" },
-    include: { rubricCriteria: { orderBy: { sortOrder: "asc" } } },
     orderBy: { title: "asc" },
   });
 
@@ -25,33 +24,17 @@ export async function getScenarioLibrary(userId: string, teamId: string | null) 
 
   const attempts = await prisma.practiceAttempt.findMany({
     where: { userId, isPreview: false, status: "COMPLETED" },
-    select: { scenarioId: true, overallScore: true, passed: true, startedAt: true },
+    select: { scenarioId: true },
     orderBy: { startedAt: "desc" },
   });
 
-  const attemptStats = new Map<
-    string,
-    { count: number; bestScore: number | null; mostRecentScore: number | null; passed: boolean }
-  >();
+  const attemptStats = new Map<string, { count: number }>();
 
   for (const attempt of attempts) {
     const current = attemptStats.get(attempt.scenarioId) ?? {
       count: 0,
-      bestScore: null,
-      mostRecentScore: null,
-      passed: false,
     };
     current.count += 1;
-    if (attempt.overallScore != null) {
-      current.bestScore =
-        current.bestScore == null
-          ? attempt.overallScore
-          : Math.max(current.bestScore, attempt.overallScore);
-      if (current.mostRecentScore == null) {
-        current.mostRecentScore = attempt.overallScore;
-      }
-    }
-    if (attempt.passed) current.passed = true;
     attemptStats.set(attempt.scenarioId, current);
   }
 
@@ -66,9 +49,7 @@ export async function getScenarioLibrary(userId: string, teamId: string | null) 
       isRequired: assignment?.required ?? false,
       dueDate: assignment?.dueDate?.toISOString() ?? null,
       attemptCount: stats?.count ?? 0,
-      bestScore: stats?.bestScore ?? null,
-      mostRecentScore: stats?.mostRecentScore ?? null,
-      passed: stats?.passed ?? false,
+      completed: (stats?.count ?? 0) > 0,
       assignmentId: assignment?.id ?? null,
     };
   });
@@ -82,7 +63,6 @@ export async function getScenarioLibrary(userId: string, teamId: string | null) 
 export async function getScenarioDetail(slug: string, userId: string) {
   const scenario = await prisma.practiceScenario.findUnique({
     where: { slug },
-    include: { rubricCriteria: { orderBy: { sortOrder: "asc" } } },
   });
 
   if (!scenario || scenario.status !== "PUBLISHED") return null;
@@ -95,8 +75,6 @@ export async function getScenarioDetail(slug: string, userId: string) {
       status: true,
       startedAt: true,
       endedAt: true,
-      overallScore: true,
-      passed: true,
       durationSeconds: true,
     },
     orderBy: { startedAt: "desc" },

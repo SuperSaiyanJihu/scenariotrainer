@@ -17,7 +17,6 @@ export async function GET() {
 
   const publishedScenarios = await prisma.practiceScenario.findMany({
     where: { status: "PUBLISHED" },
-    include: { rubricCriteria: { orderBy: { sortOrder: "asc" } } },
     orderBy: { title: "asc" },
   });
 
@@ -32,38 +31,16 @@ export async function GET() {
 
   const attempts = await prisma.practiceAttempt.findMany({
     where: { userId: user.id, isPreview: false, status: "COMPLETED" },
-    select: {
-      scenarioId: true,
-      overallScore: true,
-      passed: true,
-      startedAt: true,
-    },
-    orderBy: { startedAt: "desc" },
+    select: { scenarioId: true },
   });
 
-  const attemptStats = new Map<
-    string,
-    { count: number; bestScore: number | null; mostRecentScore: number | null; passed: boolean }
-  >();
+  const attemptStats = new Map<string, { count: number }>();
 
   for (const attempt of attempts) {
     const current = attemptStats.get(attempt.scenarioId) ?? {
       count: 0,
-      bestScore: null,
-      mostRecentScore: null,
-      passed: false,
     };
     current.count += 1;
-    if (attempt.overallScore != null) {
-      current.bestScore =
-        current.bestScore == null
-          ? attempt.overallScore
-          : Math.max(current.bestScore, attempt.overallScore);
-      if (current.mostRecentScore == null) {
-        current.mostRecentScore = attempt.overallScore;
-      }
-    }
-    if (attempt.passed) current.passed = true;
     attemptStats.set(attempt.scenarioId, current);
   }
 
@@ -78,9 +55,7 @@ export async function GET() {
       isRequired: assignment?.required ?? false,
       dueDate: assignment?.dueDate?.toISOString() ?? null,
       attemptCount: stats?.count ?? 0,
-      bestScore: stats?.bestScore ?? null,
-      mostRecentScore: stats?.mostRecentScore ?? null,
-      passed: stats?.passed ?? false,
+      completed: (stats?.count ?? 0) > 0,
       assignmentId: assignment?.id ?? null,
     };
   });

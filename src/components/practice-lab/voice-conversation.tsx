@@ -199,7 +199,7 @@ export function VoiceConversation({
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error ?? "Failed to complete evaluation");
+        setError(data.error ?? "Failed to complete the conversation");
         setEnding(false);
         return;
       }

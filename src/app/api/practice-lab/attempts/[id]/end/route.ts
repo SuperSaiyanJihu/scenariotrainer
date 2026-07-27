@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/api-auth";
-import { performAttemptEvaluation } from "@/lib/practice-lab/evaluate-attempt";
+import { prepareAttemptReflection } from "@/lib/practice-lab/evaluate-attempt";
 
 export async function POST(
   _request: Request,
@@ -28,12 +28,12 @@ export async function POST(
     });
   }
 
-  const evalResult = await performAttemptEvaluation(id, authResult.user.id);
+  const reflectionResult = await prepareAttemptReflection(id, authResult.user.id);
 
-  if (!evalResult.success) {
+  if (!reflectionResult.success) {
     return NextResponse.json(
-      { error: evalResult.error, canRetry: true },
-      { status: evalResult.status }
+      { error: reflectionResult.error },
+      { status: reflectionResult.status }
     );
   }
 

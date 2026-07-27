@@ -15,8 +15,8 @@ interface NavItem {
 const navItems: NavItem[] = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/practice-lab", label: "Practice Lab" },
-  { href: "/supervisor/practice-lab", label: "Team Results", roles: ["SUPERVISOR", "ADMINISTRATOR"] },
-  { href: "/admin/practice-lab", label: "Manage Scenarios", roles: ["ADMINISTRATOR"] },
+  { href: "/supervisor/practice-lab", label: "Team Activity", roles: ["SUPERVISOR", "ADMINISTRATOR", "SUPERADMIN"] },
+  { href: "/admin/practice-lab", label: "Manage Scenarios", roles: ["ADMINISTRATOR", "SUPERADMIN"] },
 ];
 
 export function AppShell({
@@ -34,11 +34,14 @@ export function AppShell({
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-white">
+      <header className="border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-8">
-            <Link href="/dashboard" className="text-lg font-bold text-sky-700">
-              Performance Pulse
+            <Link
+              href="/dashboard"
+              className="text-lg font-bold tracking-wide text-slate-900"
+            >
+              ScenarioTrainer
             </Link>
             <nav className="hidden gap-1 sm:flex">
               {visibleItems.map((item) => (

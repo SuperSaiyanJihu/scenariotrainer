@@ -11,7 +11,7 @@ const settingsSchema = z.object({
 });
 
 export async function GET() {
-  const authResult = await requireRole(["ADMINISTRATOR"]);
+  const authResult = await requireRole(["ADMINISTRATOR", "SUPERADMIN"]);
   if ("error" in authResult) return authResult.error;
 
   const settings = await prisma.appSettings.upsert({
@@ -24,7 +24,7 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
-  const authResult = await requireRole(["ADMINISTRATOR"]);
+  const authResult = await requireRole(["ADMINISTRATOR", "SUPERADMIN"]);
   if ("error" in authResult) return authResult.error;
 
   const body = await request.json();

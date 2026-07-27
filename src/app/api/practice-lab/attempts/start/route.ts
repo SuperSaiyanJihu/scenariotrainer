@@ -45,7 +45,11 @@ export async function POST(request: Request) {
 
   const user = authResult.user;
 
-  if (isPreview && user.role !== "ADMINISTRATOR") {
+  if (
+    isPreview &&
+    user.role !== "ADMINISTRATOR" &&
+    user.role !== "SUPERADMIN"
+  ) {
     return NextResponse.json({ error: "Only administrators can preview scenarios" }, { status: 403 });
   }
 

@@ -9,9 +9,9 @@ export const dynamic = "force-dynamic";
 const navItems = [
   { href: "/dashboard", label: "Home" },
   { href: "/practice-lab", label: "Practice" },
-  { href: "/supervisor/practice-lab", label: "Team", roles: ["SUPERVISOR", "ADMINISTRATOR"] },
-  { href: "/admin/practice-lab", label: "Manage", roles: ["ADMINISTRATOR"] },
-  { href: "/admin/practice-lab/settings", label: "Settings", roles: ["ADMINISTRATOR"] },
+  { href: "/supervisor/practice-lab", label: "Team", roles: ["SUPERVISOR", "ADMINISTRATOR", "SUPERADMIN"] },
+  { href: "/admin/practice-lab", label: "Manage", roles: ["ADMINISTRATOR", "SUPERADMIN"] },
+  { href: "/admin/practice-lab/settings", label: "Settings", roles: ["ADMINISTRATOR", "SUPERADMIN"] },
 ];
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -24,13 +24,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div className="min-h-screen bg-slate-50 pb-20 sm:pb-0">
       <header
-        className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur"
+        className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-8">
-            <Link href="/dashboard" className="text-lg font-bold text-sky-700">
-              Performance Pulse
+            <Link href="/dashboard" className="text-lg font-bold text-slate-900">
+              ScenarioTrainer
             </Link>
             <nav className="hidden gap-1 sm:flex">
               {visibleItems.map((item) => (

@@ -10,12 +10,11 @@ const assignmentSchema = z.object({
   teamId: z.string().optional(),
   required: z.boolean().default(true),
   dueDate: z.string().datetime().optional(),
-  minimumPassingScore: z.number().int().min(0).max(100).optional(),
   maximumAttempts: z.number().int().min(1).optional(),
 });
 
 export async function GET() {
-  const authResult = await requireRole(["SUPERVISOR", "ADMINISTRATOR"]);
+  const authResult = await requireRole(["SUPERVISOR", "ADMINISTRATOR", "SUPERADMIN"]);
   if ("error" in authResult) return authResult.error;
 
   const user = authResult.user;
@@ -27,7 +26,7 @@ export async function GET() {
 
   const assignments = await prisma.practiceAssignment.findMany({
     where:
-      user.role === "ADMINISTRATOR"
+      user.role === "ADMINISTRATOR" || user.role === "SUPERADMIN"
         ? {}
         : {
             OR: [
@@ -50,7 +49,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const authResult = await requireRole(["SUPERVISOR", "ADMINISTRATOR"]);
+  const authResult = await requireRole(["SUPERVISOR", "ADMINISTRATOR", "SUPERADMIN"]);
   if ("error" in authResult) return authResult.error;
 
   const body = await request.json();
@@ -90,7 +89,6 @@ export async function POST(request: Request) {
       teamId: parsed.data.teamId,
       required: parsed.data.required,
       dueDate: parsed.data.dueDate ? new Date(parsed.data.dueDate) : null,
-      minimumPassingScore: parsed.data.minimumPassingScore,
       maximumAttempts: parsed.data.maximumAttempts,
       assignedById: authResult.user.id,
     },

@@ -2,18 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { formatScore } from "@/lib/utils";
 
 interface AttemptResult {
   id: string;
   user: { name: string; email: string };
   scenario: { title: string };
   mode: string;
-  overallScore: number | null;
-  passed: boolean | null;
   startedAt: string;
   durationSeconds: number | null;
 }
@@ -120,7 +116,7 @@ export default function SupervisorPracticeLabPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold">Team Practice Results</h1>
+        <h1 className="text-2xl font-bold">Team Practice Activity</h1>
         <p className="text-slate-600">Review completion status and assign practice scenarios</p>
       </div>
 
@@ -246,14 +242,7 @@ export default function SupervisorPracticeLabPage() {
                         {a.scenario.title} · {a.mode}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold">{formatScore(a.overallScore)}</span>
-                      {a.passed != null && (
-                        <Badge variant={a.passed ? "success" : "warning"}>
-                          {a.passed ? "Passed" : "Needs Practice"}
-                        </Badge>
-                      )}
-                    </div>
+                    <span className="text-sm text-emerald-700">Completed</span>
                   </div>
                 </CardHeader>
               </Card>

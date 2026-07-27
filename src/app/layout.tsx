@@ -10,14 +10,14 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Performance Pulse",
-  description: "Excel Aquatics training and Practice Lab conversation coaching",
-  applicationName: "Performance Pulse",
+  title: "ScenarioTrainer",
+  description: "Practice role-play conversations with AI coaching",
+  applicationName: "ScenarioTrainer",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Pulse",
+    title: "ScenarioTrainer",
   },
   icons: {
     icon: [

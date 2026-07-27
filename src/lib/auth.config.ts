@@ -21,11 +21,20 @@ export const authConfig = {
       const role = auth?.user?.role;
       const path = request.nextUrl.pathname;
 
-      if (path.startsWith("/admin") && role !== "ADMINISTRATOR") {
+      if (
+        path.startsWith("/admin") &&
+        role !== "ADMINISTRATOR" &&
+        role !== "SUPERADMIN"
+      ) {
         return Response.redirect(new URL("/dashboard", request.nextUrl));
       }
 
-      if (path.startsWith("/supervisor") && role !== "SUPERVISOR" && role !== "ADMINISTRATOR") {
+      if (
+        path.startsWith("/supervisor") &&
+        role !== "SUPERVISOR" &&
+        role !== "ADMINISTRATOR" &&
+        role !== "SUPERADMIN"
+      ) {
         return Response.redirect(new URL("/dashboard", request.nextUrl));
       }
 
@@ -41,7 +50,11 @@ export const authConfig = {
     },
     async session({ session, token }) {
       session.user.id = token.id as string;
-      session.user.role = token.role as "EMPLOYEE" | "SUPERVISOR" | "ADMINISTRATOR";
+      session.user.role = token.role as
+        | "EMPLOYEE"
+        | "SUPERVISOR"
+        | "ADMINISTRATOR"
+        | "SUPERADMIN";
       session.user.teamId = token.teamId as string | null;
       return session;
     },

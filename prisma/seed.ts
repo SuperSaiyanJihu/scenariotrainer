@@ -8,24 +8,6 @@ const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-const DEFAULT_RUBRIC = [
-  { name: "Listening and acknowledgment", description: "Demonstrates active listening and validates concerns", weight: 20, scoringGuidance: "Score based on whether the employee truly heard and acknowledged the concern before responding.", positiveIndicators: "Paraphrasing, validating feelings, not interrupting, showing empathy", negativeIndicators: "Interrupting, dismissing concerns, jumping to solutions too quickly", sortOrder: 0 },
-  { name: "Clarifying questions and discovery", description: "Asks effective questions to understand the situation", weight: 20, scoringGuidance: "Score based on quality and timing of clarifying questions.", positiveIndicators: "Open-ended questions, specific follow-ups, gathering relevant details", negativeIndicators: "Yes/no only questions, no questions asked, irrelevant questions", sortOrder: 1 },
-  { name: "Professionalism and composure", description: "Maintains calm, professional demeanor throughout", weight: 15, scoringGuidance: "Score based on tone, language, and emotional regulation.", positiveIndicators: "Calm tone, respectful language, patience under pressure", negativeIndicators: "Defensive, argumentative, condescending, or unprofessional language", sortOrder: 2 },
-  { name: "Accuracy and policy alignment", description: "Provides accurate information aligned with policies", weight: 15, scoringGuidance: "Score based on factual accuracy and policy adherence.", positiveIndicators: "Accurate program information, appropriate policy references", negativeIndicators: "Incorrect information, unauthorized promises, policy violations", sortOrder: 3 },
-  { name: "Ownership and accountability", description: "Takes appropriate ownership without blaming others", weight: 15, scoringGuidance: "Score based on accountability and avoiding blame.", positiveIndicators: "Taking responsibility, avoiding blame, unified front", negativeIndicators: "Blaming instructors, swimmers, or colleagues; deflecting responsibility", sortOrder: 4 },
-  { name: "Resolution and clear next step", description: "Identifies concrete, appropriate next steps", weight: 15, scoringGuidance: "Score based on clarity and appropriateness of proposed next steps.", positiveIndicators: "Specific follow-up actions, clear timelines, mutual agreement", negativeIndicators: "Vague promises, no next step, unrealistic commitments", sortOrder: 5 },
-];
-
-const DEFAULT_CRITICAL_ERRORS = [
-  { name: "Criticizing another employee to a parent", description: "Speaking negatively about an instructor or colleague to a parent", scoreEffect: 0, automaticFailure: true, sortOrder: 0 },
-  { name: "Sharing private employee information", description: "Disclosing confidential employee details", scoreEffect: 0, automaticFailure: true, sortOrder: 1 },
-  { name: "Arguing with or insulting the parent", description: "Becoming argumentative or using disrespectful language", scoreEffect: 0, automaticFailure: true, sortOrder: 2 },
-  { name: "Making an unauthorized promise", description: "Promising something outside their authority", scoreEffect: 0, automaticFailure: true, sortOrder: 3 },
-  { name: "Guaranteeing an uncontrollable outcome", description: "Guaranteeing results they cannot control", scoreEffect: 0, automaticFailure: false, sortOrder: 4 },
-  { name: "Ending without identifying a next step", description: "Concluding without a clear follow-up action", scoreEffect: 0, automaticFailure: false, sortOrder: 5 },
-];
-
 const SCENARIOS = [
   {
     title: "Parent Says Swimmer Is Not Progressing",
@@ -49,7 +31,7 @@ const SCENARIOS = [
     successConditions: "Parent feels heard, understands next steps, and agrees to a follow-up plan such as a progress review with the instructor",
     prohibitedAssistantBehaviors: "Do not coach the employee. Do not resolve instantly. Do not become abusive or unrealistic.",
     policyContext: "Excel Aquatics progress is individualized. Staff should not guarantee advancement timelines. Progress reviews can be scheduled with instructors.",
-    passingScore: 70,
+    passingScore: 0,
     maximumDurationMinutes: 15,
   },
   {
@@ -74,7 +56,7 @@ const SCENARIOS = [
     successConditions: "Parent feels understood and agrees to a reasonable next step such as observation or supervisor follow-up",
     prohibitedAssistantBehaviors: "Do not criticize Mike. Do not promise immediate switch without checking availability.",
     policyContext: "Instructor changes follow availability and supervisor approval. Staff protect employee privacy and maintain a unified front.",
-    passingScore: 70,
+    passingScore: 0,
     maximumDurationMinutes: 15,
   },
   {
@@ -99,7 +81,7 @@ const SCENARIOS = [
     successConditions: "Instructor acknowledges the concern and commits to following curriculum with specific changes",
     prohibitedAssistantBehaviors: "Do not be condescending. Do not threaten without cause.",
     policyContext: "Excel Aquatics curriculum ensures consistency across locations. Supervisors address issues privately and support instructor development.",
-    passingScore: 70,
+    passingScore: 0,
     maximumDurationMinutes: 15,
   },
   {
@@ -124,13 +106,19 @@ const SCENARIOS = [
     successConditions: "Both supervisors align on communication expectations and next steps for staff clarity",
     prohibitedAssistantBehaviors: "Do not become hostile. Do not gossip about staff.",
     policyContext: "Supervisors maintain a unified front with staff. Schedule changes affecting multiple teams require communication.",
-    passingScore: 70,
+    passingScore: 0,
     maximumDurationMinutes: 15,
   },
 ];
 
 async function main() {
-  const passwordHash = await bcrypt.hash("password123", 12);
+  const demoPassword = process.env.SEED_DEMO_PASSWORD;
+  if (!demoPassword) {
+    throw new Error(
+      "SEED_DEMO_PASSWORD is required. Use a unique development password and do not seed demo users in production."
+    );
+  }
+  const passwordHash = await bcrypt.hash(demoPassword, 12);
 
   await prisma.appSettings.upsert({
     where: { id: "default" },
@@ -145,9 +133,9 @@ async function main() {
   });
 
   const admin = await prisma.user.upsert({
-    where: { email: "admin@goswimexcel.com" },
+    where: { email: "superadmin@goswimexcel.com" },
     update: {},
-    create: { email: "admin@goswimexcel.com", name: "Admin User", passwordHash, role: "ADMINISTRATOR", teamId: team.id },
+    create: { email: "superadmin@goswimexcel.com", name: "Super Admin", passwordHash, role: "SUPERADMIN", teamId: team.id },
   });
 
   const supervisor = await prisma.user.upsert({
@@ -174,10 +162,7 @@ async function main() {
         version: 1,
         createdById: admin.id,
         updatedById: admin.id,
-        rubricCriteria: { create: DEFAULT_RUBRIC },
-        criticalErrors: { create: scenarioData.category === "PARENT_CONVERSATIONS" ? DEFAULT_CRITICAL_ERRORS : DEFAULT_CRITICAL_ERRORS.filter((e) => !e.name.toLowerCase().includes("parent")) },
       },
-      include: { rubricCriteria: true, criticalErrors: true },
     });
 
     const employee = await prisma.user.findUnique({ where: { email: "employee@goswimexcel.com" } });

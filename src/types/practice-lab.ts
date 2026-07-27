@@ -54,58 +54,17 @@ export interface ScenarioSnapshot {
   }>;
 }
 
-export interface EvidenceItem {
-  sequence: number;
-  quote: string;
-  explanation: string;
-}
-
-export interface StrengthItem {
+export interface CoachingSuggestion {
   title: string;
-  explanation: string;
-  evidenceSequences: number[];
-}
-
-export interface OpportunityItem {
-  title: string;
-  explanation: string;
-  betterApproach: string;
-  evidenceSequences: number[];
-}
-
-export interface CriticalErrorResult {
-  criticalErrorId: string;
-  detected: boolean;
-  explanation: string;
-  evidenceSequences: number[];
-}
-
-export interface SuggestedLanguageItem {
-  situation: string;
   suggestion: string;
+  implementation: string;
 }
 
-export interface ReflectionQuestionItem {
-  question: string;
-  purpose: string;
-}
-
-export interface EvaluationOutput {
-  overallScore: number;
-  passed: boolean;
-  overallSummary: string;
-  criterionScores: Array<{
-    criterionId: string;
-    criterionName: string;
-    score: number;
-    feedback: string;
-    evidence: EvidenceItem[];
-  }>;
-  strengths: StrengthItem[];
-  opportunities: OpportunityItem[];
-  criticalErrors: CriticalErrorResult[];
-  suggestedLanguage: SuggestedLanguageItem[];
-  reflectionQuestions: ReflectionQuestionItem[];
+export interface CoachingOutput {
+  coachResponse: string;
+  whatWentWell: string[];
+  whatCouldImprove: string[];
+  suggestions: CoachingSuggestion[];
   nextPracticeFocus: string;
 }
 
@@ -122,9 +81,7 @@ export interface PublicScenario {
   aiCharacterRole: string;
   aiCharacterDescription: string;
   modeAvailability: ModeAvailability;
-  passingScore: number;
   status: ScenarioStatus;
-  rubricCriteria: Array<{ id: string; name: string; description: string; weight: number }>;
 }
 
 export interface ScenarioLibraryItem extends PublicScenario {
@@ -132,9 +89,7 @@ export interface ScenarioLibraryItem extends PublicScenario {
   isRequired: boolean;
   dueDate: string | null;
   attemptCount: number;
-  bestScore: number | null;
-  mostRecentScore: number | null;
-  passed: boolean;
+  completed: boolean;
   assignmentId: string | null;
 }
 
@@ -144,7 +99,5 @@ export interface AttemptSummary {
   status: AttemptStatus;
   startedAt: string;
   endedAt: string | null;
-  overallScore: number | null;
-  passed: boolean | null;
   durationSeconds: number | null;
 }

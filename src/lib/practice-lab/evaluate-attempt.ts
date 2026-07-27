@@ -1,11 +1,23 @@
 import { prisma } from "@/lib/db";
-import { runEvaluation } from "@/lib/practice-lab/evaluation";
 import { practiceLabConfig } from "@/lib/practice-lab/config";
 import { logPracticeEvent } from "@/lib/practice-lab/logger";
-import { parseScenarioSnapshot } from "@/lib/practice-lab/scenario-utils";
-import type { Prisma } from "@/generated/prisma/client";
 
-export async function performAttemptEvaluation(
+const REFLECTION_PROMPTS = [
+  {
+    question: "What do you think went well in that conversation?",
+    purpose: "Notice the choices you want to keep using.",
+  },
+  {
+    question: "What did not go as well as you wanted?",
+    purpose: "Identify a moment that felt difficult or less effective.",
+  },
+  {
+    question: "What would you change or do better next time?",
+    purpose: "Turn the practice into a concrete next step.",
+  },
+] as const;
+
+export async function prepareAttemptReflection(
   attemptId: string,
   userId: string
 ): Promise<{ success: true } | { success: false; error: string; status: number }> {
@@ -25,50 +37,21 @@ export async function performAttemptEvaluation(
     return { success: true };
   }
 
-  if (attempt.evaluationRetryCount >= practiceLabConfig.evaluationRetryLimit) {
-    return { success: false, error: "Evaluation retry limit reached", status: 429 };
+  if (!attempt.messages.some((message) => message.speaker === "EMPLOYEE")) {
+    return { success: false, error: "Cannot complete an empty conversation", status: 400 };
   }
 
-  const employeeMessages = attempt.messages.filter((m) => m.speaker === "EMPLOYEE");
-  if (employeeMessages.length === 0) {
-    return { success: false, error: "Cannot evaluate an empty conversation", status: 400 };
-  }
-
-  await prisma.practiceAttempt.update({
-    where: { id: attemptId },
-    data: { status: "EVALUATING" },
-  });
-
-  const snapshot = parseScenarioSnapshot(attempt.scenarioSnapshot);
-  const transcript = attempt.messages.map((m) => ({
-    sequence: m.sequence,
-    speaker: m.speaker,
-    content: m.content,
-  }));
-
-  const result = await runEvaluation(snapshot, transcript, attemptId);
-
-  if (!result.success) {
-    await prisma.practiceAttempt.update({
-      where: { id: attemptId },
-      data: {
-        status: "FAILED",
-        evaluationRetryCount: { increment: 1 },
-      },
-    });
-    return { success: false, error: result.error, status: 502 };
-  }
-
-  const { evaluation, model } = result;
   const endedAt = attempt.endedAt ?? new Date();
-  const durationSeconds = Math.round((endedAt.getTime() - attempt.startedAt.getTime()) / 1000);
+  const durationSeconds = Math.round(
+    (endedAt.getTime() - attempt.startedAt.getTime()) / 1000
+  );
 
   await prisma.$transaction(async (tx) => {
     if (attempt.evaluation) {
       await tx.practiceCriterionScore.deleteMany({
-        where: { evaluationId: attempt.evaluation!.id },
+        where: { evaluationId: attempt.evaluation.id },
       });
-      await tx.practiceEvaluation.delete({ where: { id: attempt.evaluation!.id } });
+      await tx.practiceEvaluation.delete({ where: { id: attempt.evaluation.id } });
     }
 
     await tx.practiceReflection.deleteMany({ where: { attemptId } });
@@ -76,38 +59,23 @@ export async function performAttemptEvaluation(
     await tx.practiceEvaluation.create({
       data: {
         attemptId,
-        overallSummary: evaluation.overallSummary,
-        strengths: evaluation.strengths as unknown as Prisma.InputJsonValue,
-        opportunities: evaluation.opportunities as unknown as Prisma.InputJsonValue,
-        suggestedLanguage: evaluation.suggestedLanguage as unknown as Prisma.InputJsonValue,
-        criticalErrors: evaluation.criticalErrors as unknown as Prisma.InputJsonValue,
-        evidence: evaluation.criterionScores.flatMap((c) => c.evidence) as unknown as Prisma.InputJsonValue,
-        nextPracticeFocus: evaluation.nextPracticeFocus,
-        criterionScores: {
-          create: evaluation.criterionScores.map((cs) => {
-            const criterion = snapshot.rubricCriteria.find((c) => c.id === cs.criterionId);
-            const weight = criterion?.weight ?? 0;
-            const weightedScore = (cs.score * weight) / 100;
-            return {
-              rubricCriterionId: cs.criterionId,
-              criterionNameSnapshot: cs.criterionName,
-              weightSnapshot: weight,
-              rawScore: cs.score,
-              weightedScore,
-              feedback: cs.feedback,
-              evidence: cs.evidence as unknown as Prisma.InputJsonValue,
-            };
-          }),
-        },
+        overallSummary:
+          "Take a moment to reflect on the conversation. Your AI coach will respond after you answer the three questions below.",
+        strengths: [],
+        opportunities: [],
+        suggestedLanguage: [],
+        criticalErrors: [],
+        evidence: [],
+        nextPracticeFocus: "",
       },
     });
 
     await tx.practiceReflection.createMany({
-      data: evaluation.reflectionQuestions.map((rq, i) => ({
+      data: REFLECTION_PROMPTS.map((prompt, index) => ({
         attemptId,
-        question: rq.question,
-        purpose: rq.purpose,
-        sortOrder: i,
+        question: prompt.question,
+        purpose: prompt.purpose,
+        sortOrder: index,
       })),
     });
 
@@ -117,19 +85,14 @@ export async function performAttemptEvaluation(
         status: "COMPLETED",
         endedAt,
         durationSeconds,
-        overallScore: evaluation.overallScore,
-        passed: evaluation.passed,
-        evaluationModel: model,
-        evaluatorVersion: practiceLabConfig.evaluatorVersion,
+        overallScore: null,
+        passed: null,
+        evaluationModel: null,
+        evaluatorVersion: practiceLabConfig.coachVersion,
       },
     });
   });
 
-  logPracticeEvent("attempt_completed", {
-    attemptId,
-    overallScore: evaluation.overallScore,
-    passed: evaluation.passed,
-  });
-
+  logPracticeEvent("attempt_completed", { attemptId });
   return { success: true };
 }

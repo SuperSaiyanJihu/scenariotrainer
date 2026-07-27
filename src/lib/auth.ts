@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import type { UserRole } from "@/generated/prisma/client";
 import { authConfig } from "@/lib/auth.config";
+import "next-auth/jwt";
 
 declare module "next-auth" {
   interface Session {
@@ -22,7 +23,7 @@ declare module "next-auth" {
   }
 }
 
-declare module "@auth/core/jwt" {
+declare module "next-auth/jwt" {
   interface JWT {
     id: string;
     role: UserRole;

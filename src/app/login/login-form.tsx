@@ -43,8 +43,10 @@ export function LoginForm() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-sky-50 to-slate-100 px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl text-sky-800">Performance Pulse</CardTitle>
-          <CardDescription>Sign in to continue your training</CardDescription>
+          <CardTitle className="text-2xl text-slate-900">ScenarioTrainer</CardTitle>
+          <CardDescription>
+            Sign in to start role-play practice and get coaching feedback
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

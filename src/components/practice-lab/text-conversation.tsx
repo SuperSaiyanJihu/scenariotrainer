@@ -100,7 +100,7 @@ export function TextConversation({
         data.message,
       ]);
     } catch {
-      setError("Connection error. Your message was not lost — please try again.");
+      setError("Connection error. Your message was not sent. Please try again.");
       setInput(content);
     } finally {
       setLoading(false);
@@ -119,9 +119,6 @@ export function TextConversation({
       const data = await res.json();
       if (!res.ok) {
         setError(data.error ?? "Failed to end conversation");
-        if (data.canRetry) {
-          setError(`${data.error}. You can retry evaluation from feedback.`);
-        }
         setEnding(false);
         return;
       }
@@ -143,23 +140,28 @@ export function TextConversation({
   return (
     <div className="flex h-[calc(100vh-8rem)] flex-col">
       {isPreview && (
-        <div className="mb-2 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
-          Administrator Preview — this attempt will not count as employee training.
+        <div className="mb-2 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          Administrator preview. This attempt will not count as employee training.
         </div>
       )}
 
       <Card className="mb-4">
         <CardHeader className="py-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-3">
             <div>
               <CardTitle className="text-base">{scenarioTitle}</CardTitle>
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-slate-600">
                 Speaking with {characterName} ({characterRole})
               </p>
             </div>
             <div className="flex items-center gap-2">
               <Badge variant="secondary">{timeDisplay}</Badge>
-              <Button variant="destructive" size="sm" onClick={endConversation} disabled={ending}>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={endConversation}
+                disabled={ending}
+              >
                 {ending ? "Ending..." : "End Conversation"}
               </Button>
             </div>
@@ -169,7 +171,10 @@ export function TextConversation({
 
       <Card className="flex flex-1 flex-col overflow-hidden">
         <CardContent className="flex flex-1 flex-col p-0">
-          <div className="flex-1 overflow-y-auto p-4 space-y-4" aria-live="polite">
+          <div
+            className="flex-1 space-y-4 overflow-y-auto p-4"
+            aria-live="polite"
+          >
             {messages.map((msg) => (
               <div
                 key={`${msg.sequence}-${msg.id}`}
@@ -185,13 +190,15 @@ export function TextConversation({
                   {msg.speaker === "CHARACTER" && (
                     <p className="mb-1 text-xs font-medium text-slate-500">{characterName}</p>
                   )}
-                  <p className="whitespace-pre-wrap text-sm">{msg.content}</p>
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-900">
+                    {msg.content}
+                  </p>
                 </div>
               </div>
             ))}
             {loading && (
               <div className="flex justify-start">
-                <div className="rounded-lg bg-slate-100 px-4 py-2 text-sm text-slate-500">
+                <div className="rounded-lg bg-slate-100 px-4 py-2 text-sm text-slate-600">
                   Thinking...
                 </div>
               </div>
@@ -200,7 +207,11 @@ export function TextConversation({
           </div>
 
           <div className="border-t border-slate-200 p-4">
-            {error && <p className="mb-2 text-sm text-red-600" role="alert">{error}</p>}
+            {error && (
+              <p className="mb-2 text-sm text-red-600" role="alert">
+                {error}
+              </p>
+            )}
             <div className="flex gap-2">
               <Textarea
                 value={input}
@@ -216,15 +227,15 @@ export function TextConversation({
                 Send
               </Button>
             </div>
-            <p className="mt-1 text-xs text-slate-400">
-              Max duration: {maxDurationMinutes} min · Press Enter to send
+            <p className="mt-1 text-xs text-slate-500">
+              Max duration: {maxDurationMinutes} min - Press Enter to send
             </p>
           </div>
         </CardContent>
       </Card>
 
       <div className="mt-2 text-center">
-        <Link href="/practice-lab" className="text-sm text-slate-500 hover:underline">
+        <Link href="/practice-lab" className="text-sm text-slate-700 hover:underline">
           Exit to Practice Lab
         </Link>
       </div>

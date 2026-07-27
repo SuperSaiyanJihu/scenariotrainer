@@ -4,12 +4,12 @@ import { requireRole } from "@/lib/api-auth";
 import { getSupervisedUserIds } from "@/lib/practice-lab/authorization";
 
 export async function GET() {
-  const authResult = await requireRole(["SUPERVISOR", "ADMINISTRATOR"]);
+  const authResult = await requireRole(["SUPERVISOR", "ADMINISTRATOR", "SUPERADMIN"]);
   if ("error" in authResult) return authResult.error;
 
   const user = authResult.user;
 
-  if (user.role === "ADMINISTRATOR") {
+  if (user.role === "ADMINISTRATOR" || user.role === "SUPERADMIN") {
     const users = await prisma.user.findMany({
       where: { isActive: true, role: { in: ["EMPLOYEE", "SUPERVISOR"] } },
       select: { id: true, name: true, email: true, role: true, teamId: true },

@@ -11,6 +11,7 @@ enum UserRole {
   EMPLOYEE
   SUPERVISOR
   ADMINISTRATOR
+  SUPERADMIN
 }
 
 enum ScenarioStatus {

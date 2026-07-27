@@ -1,9 +1,9 @@
 type LogEvent =
   | "attempt_created"
   | "attempt_completed"
-  | "evaluation_started"
-  | "evaluation_completed"
-  | "evaluation_failed"
+  | "coaching_started"
+  | "coaching_completed"
+  | "coaching_failed"
   | "roleplay_response"
   | "roleplay_failed"
   | "voice_session_started"

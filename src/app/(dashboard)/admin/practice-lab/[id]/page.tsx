@@ -8,15 +8,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-const DEFAULT_RUBRIC = [
-  { name: "Listening and acknowledgment", description: "", weight: 20, scoringGuidance: "", positiveIndicators: "", negativeIndicators: "", sortOrder: 0 },
-  { name: "Clarifying questions and discovery", description: "", weight: 20, scoringGuidance: "", positiveIndicators: "", negativeIndicators: "", sortOrder: 1 },
-  { name: "Professionalism and composure", description: "", weight: 15, scoringGuidance: "", positiveIndicators: "", negativeIndicators: "", sortOrder: 2 },
-  { name: "Accuracy and policy alignment", description: "", weight: 15, scoringGuidance: "", positiveIndicators: "", negativeIndicators: "", sortOrder: 3 },
-  { name: "Ownership and accountability", description: "", weight: 15, scoringGuidance: "", positiveIndicators: "", negativeIndicators: "", sortOrder: 4 },
-  { name: "Resolution and clear next step", description: "", weight: 15, scoringGuidance: "", positiveIndicators: "", negativeIndicators: "", sortOrder: 5 },
-];
-
 export default function ScenarioBuilderPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const [scenarioId, setScenarioId] = useState<string | null>(null);
@@ -46,11 +37,8 @@ export default function ScenarioBuilderPage({ params }: { params: Promise<{ id: 
     prohibitedAssistantBehaviors: "",
     policyContext: "",
     modeAvailability: "TEXT_AND_VOICE",
-    passingScore: 70,
     maximumDurationMinutes: 15,
     status: "DRAFT",
-    rubricCriteria: DEFAULT_RUBRIC,
-    criticalErrors: [] as Array<{ name: string; description: string; scoreEffect: number; automaticFailure: boolean; sortOrder: number }>,
   });
 
   useEffect(() => {
@@ -169,8 +157,14 @@ export default function ScenarioBuilderPage({ params }: { params: Promise<{ id: 
             <Input type="number" value={form.estimatedMinutes} onChange={(e) => updateField("estimatedMinutes", parseInt(e.target.value))} />
           </div>
           <div className="space-y-2">
-            <Label>Passing Score</Label>
-            <Input type="number" value={form.passingScore} onChange={(e) => updateField("passingScore", parseInt(e.target.value))} />
+            <Label>Maximum Minutes</Label>
+            <Input
+              type="number"
+              value={form.maximumDurationMinutes}
+              onChange={(e) =>
+                updateField("maximumDurationMinutes", parseInt(e.target.value))
+              }
+            />
           </div>
           <div className="space-y-2 sm:col-span-2">
             <Label>Employee Role</Label>
@@ -219,46 +213,6 @@ export default function ScenarioBuilderPage({ params }: { params: Promise<{ id: 
                 value={String(form[field as keyof typeof form] ?? "")}
                 onChange={(e) => updateField(field, e.target.value)}
               />
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader><CardTitle>Rubric Criteria (weights must total 100)</CardTitle></CardHeader>
-        <CardContent className="space-y-4">
-          {form.rubricCriteria.map((c, i) => (
-            <div key={i} className="grid gap-2 sm:grid-cols-4 border-b pb-4">
-              <Input
-                placeholder="Name"
-                value={c.name}
-                onChange={(e) => {
-                  const updated = [...form.rubricCriteria];
-                  updated[i] = { ...c, name: e.target.value };
-                  updateField("rubricCriteria", updated);
-                }}
-              />
-              <Input
-                type="number"
-                placeholder="Weight"
-                value={c.weight}
-                onChange={(e) => {
-                  const updated = [...form.rubricCriteria];
-                  updated[i] = { ...c, weight: parseInt(e.target.value) };
-                  updateField("rubricCriteria", updated);
-                }}
-              />
-              <div className="sm:col-span-2">
-                <Textarea
-                  placeholder="Description"
-                  value={c.description}
-                  onChange={(e) => {
-                    const updated = [...form.rubricCriteria];
-                    updated[i] = { ...c, description: e.target.value };
-                    updateField("rubricCriteria", updated);
-                  }}
-                />
-              </div>
             </div>
           ))}
         </CardContent>

@@ -2,7 +2,11 @@ import type { UserRole } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 
 export { deduplicateVoiceTranscriptEvents, getNextSequence } from "@/lib/practice-lab/transcript";
-export { canManageScenarios, canAssignScenarios } from "@/lib/practice-lab/roles";
+export {
+  canManageScenarios,
+  canAssignScenarios,
+  canRemoveScenarios,
+} from "@/lib/practice-lab/roles";
 
 export interface AuthUser {
   id: string;
@@ -12,7 +16,7 @@ export interface AuthUser {
 
 export async function canAccessAttempt(user: AuthUser, attemptUserId: string): Promise<boolean> {
   if (user.id === attemptUserId) return true;
-  if (user.role === "ADMINISTRATOR") return true;
+  if (user.role === "ADMINISTRATOR" || user.role === "SUPERADMIN") return true;
 
   if (user.role === "SUPERVISOR") {
     const report = await prisma.user.findFirst({
@@ -26,7 +30,7 @@ export async function canAccessAttempt(user: AuthUser, attemptUserId: string): P
 
 export async function canViewTranscript(user: AuthUser, attemptUserId: string): Promise<boolean> {
   if (user.id === attemptUserId) return true;
-  if (user.role === "ADMINISTRATOR") return true;
+  if (user.role === "ADMINISTRATOR" || user.role === "SUPERADMIN") return true;
 
   if (user.role === "SUPERVISOR") {
     const settings = await prisma.appSettings.findUnique({ where: { id: "default" } });

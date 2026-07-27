@@ -35,7 +35,7 @@ export function MobileBottomNav({
               href={item.href}
               className={cn(
                 "flex flex-col items-center justify-center gap-1 px-2 py-2 text-[11px] font-medium",
-                active ? "text-sky-700" : "text-slate-500"
+                active ? "text-slate-900" : "text-slate-600"
               )}
             >
               <span

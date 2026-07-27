@@ -6,17 +6,13 @@ export async function POST(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireRole(["ADMINISTRATOR"]);
+  const authResult = await requireRole(["ADMINISTRATOR", "SUPERADMIN"]);
   if ("error" in authResult) return authResult.error;
 
   const { id } = await params;
 
   const original = await prisma.practiceScenario.findUnique({
     where: { id },
-    include: {
-      rubricCriteria: true,
-      criticalErrors: true,
-    },
   });
 
   if (!original) {
@@ -49,31 +45,11 @@ export async function POST(
       prohibitedAssistantBehaviors: original.prohibitedAssistantBehaviors,
       policyContext: original.policyContext,
       modeAvailability: original.modeAvailability,
-      passingScore: original.passingScore,
+      passingScore: 0,
       maximumDurationMinutes: original.maximumDurationMinutes,
       status: "DRAFT",
       createdById: authResult.user.id,
       updatedById: authResult.user.id,
-      rubricCriteria: {
-        create: original.rubricCriteria.map((c) => ({
-          name: c.name,
-          description: c.description,
-          weight: c.weight,
-          scoringGuidance: c.scoringGuidance,
-          positiveIndicators: c.positiveIndicators,
-          negativeIndicators: c.negativeIndicators,
-          sortOrder: c.sortOrder,
-        })),
-      },
-      criticalErrors: {
-        create: original.criticalErrors.map((e) => ({
-          name: e.name,
-          description: e.description,
-          scoreEffect: e.scoreEffect,
-          automaticFailure: e.automaticFailure,
-          sortOrder: e.sortOrder,
-        })),
-      },
     },
   });
 

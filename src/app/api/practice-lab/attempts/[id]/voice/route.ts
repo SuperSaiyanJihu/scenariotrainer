@@ -7,6 +7,7 @@ import { buildRealtimeInstructions } from "@/lib/practice-lab/prompts";
 import { logPracticeEvent } from "@/lib/practice-lab/logger";
 import { parseScenarioSnapshot } from "@/lib/practice-lab/scenario-utils";
 import { checkRateLimit } from "@/lib/practice-lab/rate-limit";
+import { createHash } from "crypto";
 
 const transcriptSchema = z.object({
   messages: z.array(
@@ -117,6 +118,9 @@ export async function GET(
 
   const snapshot = parseScenarioSnapshot(attempt.scenarioSnapshot);
   const instructions = buildRealtimeInstructions(snapshot);
+  const safetyIdentifier = createHash("sha256")
+    .update(authResult.user.id)
+    .digest("hex");
 
   try {
     const response = await fetch("https://api.openai.com/v1/realtime/client_secrets", {
@@ -124,6 +128,7 @@ export async function GET(
       headers: {
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
         "Content-Type": "application/json",
+        "OpenAI-Safety-Identifier": safetyIdentifier,
       },
       body: JSON.stringify({
         session: {
@@ -132,7 +137,7 @@ export async function GET(
           instructions,
           audio: {
             input: { turn_detection: { type: "server_vad" } },
-            output: { voice: "alloy" },
+            output: { voice: "marin" },
           },
         },
       }),

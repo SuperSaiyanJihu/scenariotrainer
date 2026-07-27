@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { formatCategory, formatDifficulty, formatDuration, formatScore } from "@/lib/utils";
+import { formatCategory, formatDifficulty, formatDuration } from "@/lib/utils";
 import { getScenarioLibrary, requireSessionUser } from "@/lib/practice-lab/server-data";
 import type { ScenarioLibraryItem } from "@/types/practice-lab";
 
@@ -18,8 +18,8 @@ function ScenarioCard({ scenario }: { scenario: ScenarioLibraryItem }) {
             <CardTitle className="text-lg">{scenario.title}</CardTitle>
             <CardDescription className="mt-1">{scenario.description}</CardDescription>
           </div>
-          {scenario.passed && <Badge variant="success">Passed</Badge>}
-          {scenario.isRequired && !scenario.passed && <Badge variant="warning">Required</Badge>}
+          {scenario.completed && <Badge variant="success">Practiced</Badge>}
+          {scenario.isRequired && !scenario.completed && <Badge variant="warning">Required</Badge>}
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -27,20 +27,11 @@ function ScenarioCard({ scenario }: { scenario: ScenarioLibraryItem }) {
           <Badge variant="secondary">{formatCategory(scenario.category)}</Badge>
           <Badge variant="secondary">{formatDifficulty(scenario.difficulty)}</Badge>
           <span>{formatDuration(scenario.estimatedMinutes)}</span>
-          <span>Pass: {scenario.passingScore}%</span>
         </div>
-        <div className="grid grid-cols-3 gap-2 text-center text-sm">
+        <div className="text-center text-sm">
           <div>
             <p className="font-semibold">{scenario.attemptCount}</p>
-            <p className="text-slate-500">Attempts</p>
-          </div>
-          <div>
-            <p className="font-semibold">{formatScore(scenario.bestScore)}</p>
-            <p className="text-slate-500">Best</p>
-          </div>
-          <div>
-            <p className="font-semibold">{formatScore(scenario.mostRecentScore)}</p>
-            <p className="text-slate-500">Recent</p>
+            <p className="text-slate-500">Completed practices</p>
           </div>
         </div>
         <Button asChild className="w-full">
@@ -61,16 +52,16 @@ export default async function PracticeLabPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Practice Lab</h1>
-        <p className="text-slate-600">
-          Rehearse realistic workplace conversations and receive structured coaching feedback.
+        <p className="text-slate-700">
+          Rehearse realistic workplace conversations, reflect, and receive conversational coaching.
         </p>
       </div>
 
       <section>
-        <h2 className="mb-4 text-lg font-semibold">Assigned Scenarios</h2>
+        <h2 className="mb-4 text-lg font-semibold text-slate-900">Assigned Scenarios</h2>
         {assigned.length === 0 ? (
           <Card>
-            <CardContent className="py-8 text-center text-slate-500">
+            <CardContent className="py-8 text-center text-slate-600">
               No assigned scenarios right now. Check optional scenarios below.
             </CardContent>
           </Card>
@@ -84,10 +75,10 @@ export default async function PracticeLabPage() {
       </section>
 
       <section>
-        <h2 className="mb-4 text-lg font-semibold">Optional Scenarios</h2>
+        <h2 className="mb-4 text-lg font-semibold text-slate-900">Optional Scenarios</h2>
         {optional.length === 0 ? (
           <Card>
-            <CardContent className="py-8 text-center text-slate-500">
+            <CardContent className="py-8 text-center text-slate-600">
               No optional scenarios available.
             </CardContent>
           </Card>

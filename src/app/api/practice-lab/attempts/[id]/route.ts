@@ -129,7 +129,7 @@ export async function GET(
     where: { id },
     include: {
       messages: { orderBy: { sequence: "asc" } },
-      evaluation: { include: { criterionScores: true } },
+      evaluation: true,
       reflections: { orderBy: { sortOrder: "asc" } },
     },
   });
@@ -152,18 +152,14 @@ export async function GET(
       status: attempt.status,
       startedAt: attempt.startedAt.toISOString(),
       endedAt: attempt.endedAt?.toISOString() ?? null,
-      overallScore: attempt.overallScore,
-      passed: attempt.passed,
       durationSeconds: attempt.durationSeconds,
       isPreview: attempt.isPreview,
       reflectionCompletedAt: attempt.reflectionCompletedAt?.toISOString() ?? null,
-      evaluationRetryCount: attempt.evaluationRetryCount,
     },
     scenario: {
       title: snapshot.title,
       characterName: snapshot.aiCharacterName,
       characterRole: snapshot.aiCharacterRole,
-      passingScore: snapshot.passingScore,
       maximumDurationMinutes: snapshot.maximumDurationMinutes,
     },
     messages: attempt.messages.map((m) => ({
