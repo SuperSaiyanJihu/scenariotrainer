@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 test.describe("Practice Lab authentication", () => {
   test("login page loads", async ({ page }) => {
     await page.goto("/login");
-    await expect(page.getByRole("heading", { name: "Performance Pulse" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
     await expect(page.getByLabel("Email")).toBeVisible();
   });
 
@@ -29,11 +29,11 @@ test.describe("Practice Lab authentication", () => {
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page).toHaveURL(/dashboard/);
     await page.goto("/practice-lab");
-    const link = page.getByRole("link", { name: "View Scenario" }).first();
+    const link = page.getByRole("link", { name: "View" }).first();
     await expect(link).toBeVisible();
     await link.click();
     await expect(page.getByText("Your Role")).toBeVisible();
-    await expect(page.getByRole("button", { name: /Start Practice/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Text practice/ })).toBeVisible();
   });
 
   test("unauthorized admin routes are blocked for employees", async ({ page }) => {
@@ -54,7 +54,7 @@ test.describe("Practice Lab authentication", () => {
     await expect(page).toHaveURL(/dashboard/);
     await page.goto("/supervisor/practice-lab");
     await expect(page.getByRole("heading", { name: "Team Practice Activity" })).toBeVisible();
-    await expect(page.getByText("Assign Scenario")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Assign Scenario" })).toBeVisible();
   });
 
   test("superadmin can open scenario manager", async ({ page }) => {

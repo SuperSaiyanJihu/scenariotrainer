@@ -1,6 +1,6 @@
 {
-  "name": "Performance Pulse",
-  "short_name": "Pulse",
+  "name": "ScenarioTrainer",
+  "short_name": "Scenario",
   "description": "Excel Aquatics training and Practice Lab conversation coaching",
   "start_url": "/dashboard",
   "scope": "/",
