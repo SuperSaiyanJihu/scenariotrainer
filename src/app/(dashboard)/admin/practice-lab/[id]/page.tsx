@@ -312,7 +312,19 @@ export default function ScenarioBuilderPage({ params }: { params: Promise<{ id: 
               onChange={(e) => updateField("maximumDurationMinutes", parseInt(e.target.value) || 1)}
             />
           </div>
-          <div className="space-y-2 sm:col-span-2">
+          <div className="space-y-2">
+            <Label htmlFor="field-mode">Practice Mode</Label>
+            <Select
+              id="field-mode"
+              value={form.modeAvailability}
+              onChange={(e) => updateField("modeAvailability", e.target.value)}
+            >
+              <option value="TEXT_AND_VOICE">Text and Voice</option>
+              <option value="TEXT_ONLY">Text only</option>
+              <option value="VOICE_ONLY">Voice only</option>
+            </Select>
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="field-employee-role">
               Employee Role
               <RequiredMark />
@@ -368,6 +380,34 @@ export default function ScenarioBuilderPage({ params }: { params: Promise<{ id: 
               value={form.aiCharacterDescription}
               onChange={(e) => updateField("aiCharacterDescription", e.target.value)}
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="field-emotional-state">Starting Emotional State</Label>
+            <Textarea
+              id="field-emotional-state"
+              rows={2}
+              placeholder='e.g. "Frustrated and defensive, but willing to listen if treated with respect"'
+              value={form.startingEmotionalState}
+              onChange={(e) => updateField("startingEmotionalState", e.target.value)}
+              aria-describedby="field-emotional-state-hint"
+            />
+            <p id="field-emotional-state-hint" className="text-xs text-zinc-400">
+              How the character feels when the conversation begins.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="field-conversation-style">Conversation Style</Label>
+            <Textarea
+              id="field-conversation-style"
+              rows={2}
+              placeholder='e.g. "Short, clipped sentences. Interrupts. Softens only when acknowledged."'
+              value={form.conversationStyle}
+              onChange={(e) => updateField("conversationStyle", e.target.value)}
+              aria-describedby="field-conversation-style-hint"
+            />
+            <p id="field-conversation-style-hint" className="text-xs text-zinc-400">
+              How the character talks: tone, pacing, verbal habits.
+            </p>
           </div>
           <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="field-opening-message">
