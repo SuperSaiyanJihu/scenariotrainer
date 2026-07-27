@@ -2,6 +2,10 @@ import type { NextAuthConfig } from "next-auth";
 
 export const authConfig = {
   providers: [],
+  // Required when running behind a reverse proxy (Railway, Fly, Render, etc.),
+  // where the request host is the platform-assigned domain rather than a value
+  // Auth.js can infer. Without this, every auth request fails with UntrustedHost.
+  trustHost: true,
   pages: {
     signIn: "/login",
   },
