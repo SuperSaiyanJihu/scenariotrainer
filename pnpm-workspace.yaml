@@ -1,9 +1,6 @@
 packages:
   - "."
 
-overrides:
-  baseline-browser-mapping: 2.11.4
-
 allowBuilds:
   '@prisma/engines': true
   esbuild: true
