@@ -10,6 +10,7 @@ export const practiceLabConfig = {
     process.env.OPENAI_EVALUATION_MODEL ??
     "gpt-5.6",
   realtimeModel: process.env.OPENAI_REALTIME_MODEL ?? "gpt-realtime-2.1",
+  transcribeModel: process.env.OPENAI_TRANSCRIBE_MODEL ?? "gpt-4o-mini-transcribe",
   coachVersion: "2.0",
   rateLimitPerMinute: 30,
 } as const;
