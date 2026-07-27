@@ -28,6 +28,6 @@ export const scenarioInputSchema = z.object({
   prohibitedAssistantBehaviors: z.string().default(""),
   policyContext: z.string().default(""),
   modeAvailability: z.enum(["TEXT_ONLY", "VOICE_ONLY", "TEXT_AND_VOICE"]),
-  maximumDurationMinutes: z.number().int().min(1).default(15),
+  maximumDurationMinutes: z.number().int().min(1).default(3),
   status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).default("DRAFT"),
 });
